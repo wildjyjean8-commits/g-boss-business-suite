@@ -68,8 +68,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       },
       t: (key) => {
         const row = DICT[key as string];
-        return row ? row[INDEX[lang]] : String(key);
+        return row ? (row[INDEX[lang]] ?? String(key)) : String(key);
       },
+
     }),
     [lang],
   );
