@@ -20,6 +20,7 @@ import { Route as AppEstokRouteImport } from './routes/app.estok'
 import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
 import { Route as AppFouniseRouteImport } from './routes/app.founise'
 import { Route as AppKesRouteImport } from './routes/app.kes'
+import { Route as AppOtelRouteImport } from './routes/app.otel'
 import { Route as AppRapoRouteImport } from './routes/app.rapo'
 import { Route as AppTachRouteImport } from './routes/app.tach'
 
@@ -78,6 +79,11 @@ const AppKesRoute = AppKesRouteImport.update({
   path: '/kes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOtelRoute = AppOtelRouteImport.update({
+  id: '/otel',
+  path: '/otel',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRapoRoute = AppRapoRouteImport.update({
   id: '/rapo',
   path: '/rapo',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app': typeof AppIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
+    | '/app/otel'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
+    | '/app/otel'
     | '/app/rapo'
     | '/app/tach'
     | '/app'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
+    | '/app/otel'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -267,6 +279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/otel': {
+      id: '/app/otel'
+      path: '/otel'
+      fullPath: '/app/otel'
+      preLoaderRoute: typeof AppOtelRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/rapo': {
       id: '/app/rapo'
       path: '/rapo'
@@ -291,6 +310,7 @@ interface AppRouteChildren {
   AppFaktirasyonRoute: typeof AppFaktirasyonRoute
   AppFouniseRoute: typeof AppFouniseRoute
   AppKesRoute: typeof AppKesRoute
+  AppOtelRoute: typeof AppOtelRoute
   AppRapoRoute: typeof AppRapoRoute
   AppTachRoute: typeof AppTachRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -303,6 +323,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFaktirasyonRoute: AppFaktirasyonRoute,
   AppFouniseRoute: AppFouniseRoute,
   AppKesRoute: AppKesRoute,
+  AppOtelRoute: AppOtelRoute,
   AppRapoRoute: AppRapoRoute,
   AppTachRoute: AppTachRoute,
   AppIndexRoute: AppIndexRoute,
