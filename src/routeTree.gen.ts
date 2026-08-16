@@ -15,6 +15,7 @@ import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppEkipRouteImport } from './routes/app.ekip'
+import { Route as AppEnstitisyonRouteImport } from './routes/app.enstitisyon'
 import { Route as AppEstokRouteImport } from './routes/app.estok'
 import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
 import { Route as AppFouniseRouteImport } from './routes/app.founise'
@@ -50,6 +51,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppEkipRoute = AppEkipRouteImport.update({
   id: '/ekip',
   path: '/ekip',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEnstitisyonRoute = AppEnstitisyonRouteImport.update({
+  id: '/enstitisyon',
+  path: '/enstitisyon',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEstokRoute = AppEstokRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/enskripsyon'
     | '/login'
     | '/app/ekip'
+    | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/enskripsyon'
     | '/login'
     | '/app/ekip'
+    | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/enskripsyon'
     | '/login'
     | '/app/ekip'
+    | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
@@ -220,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppEkipRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/enstitisyon': {
+      id: '/app/enstitisyon'
+      path: '/enstitisyon'
+      fullPath: '/app/enstitisyon'
+      preLoaderRoute: typeof AppEnstitisyonRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/estok': {
       id: '/app/estok'
       path: '/estok'
@@ -267,6 +286,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppEkipRoute: typeof AppEkipRoute
+  AppEnstitisyonRoute: typeof AppEnstitisyonRoute
   AppEstokRoute: typeof AppEstokRoute
   AppFaktirasyonRoute: typeof AppFaktirasyonRoute
   AppFouniseRoute: typeof AppFouniseRoute
@@ -278,6 +298,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppEkipRoute: AppEkipRoute,
+  AppEnstitisyonRoute: AppEnstitisyonRoute,
   AppEstokRoute: AppEstokRoute,
   AppFaktirasyonRoute: AppFaktirasyonRoute,
   AppFouniseRoute: AppFouniseRoute,
