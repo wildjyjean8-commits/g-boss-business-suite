@@ -30,7 +30,7 @@ export const Route = createFileRoute("/app/rapo")({
       { property: "og:description", content: "Analyses détaillées de votre performance commerciale." },
     ],
   }),
-  component: Reports;
+  component: Reports,
 });
 
 function Reports() {

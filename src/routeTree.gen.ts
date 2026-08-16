@@ -14,6 +14,15 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppEkipRouteImport } from './routes/app.ekip'
+import { Route as AppEnstitisyonRouteImport } from './routes/app.enstitisyon'
+import { Route as AppEstokRouteImport } from './routes/app.estok'
+import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
+import { Route as AppFouniseRouteImport } from './routes/app.founise'
+import { Route as AppKesRouteImport } from './routes/app.kes'
+import { Route as AppOtelRouteImport } from './routes/app.otel'
+import { Route as AppRapoRouteImport } from './routes/app.rapo'
+import { Route as AppTachRouteImport } from './routes/app.tach'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,18 +49,81 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEkipRoute = AppEkipRouteImport.update({
+  id: '/ekip',
+  path: '/ekip',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEnstitisyonRoute = AppEnstitisyonRouteImport.update({
+  id: '/enstitisyon',
+  path: '/enstitisyon',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstokRoute = AppEstokRouteImport.update({
+  id: '/estok',
+  path: '/estok',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFaktirasyonRoute = AppFaktirasyonRouteImport.update({
+  id: '/faktirasyon',
+  path: '/faktirasyon',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFouniseRoute = AppFouniseRouteImport.update({
+  id: '/founise',
+  path: '/founise',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKesRoute = AppKesRouteImport.update({
+  id: '/kes',
+  path: '/kes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOtelRoute = AppOtelRouteImport.update({
+  id: '/otel',
+  path: '/otel',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRapoRoute = AppRapoRouteImport.update({
+  id: '/rapo',
+  path: '/rapo',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTachRoute = AppTachRouteImport.update({
+  id: '/tach',
+  path: '/tach',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/founise': typeof AppFouniseRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
+  '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/founise': typeof AppFouniseRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
+  '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -60,14 +132,65 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/ekip': typeof AppEkipRoute
+  '/app/enstitisyon': typeof AppEnstitisyonRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/founise': typeof AppFouniseRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/otel': typeof AppOtelRoute
+  '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/enskripsyon' | '/login' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/ekip'
+    | '/app/enstitisyon'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/founise'
+    | '/app/kes'
+    | '/app/otel'
+    | '/app/rapo'
+    | '/app/tach'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/enskripsyon' | '/login' | '/app'
-  id: '__root__' | '/' | '/app' | '/enskripsyon' | '/login' | '/app/'
+  to:
+    | '/'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/ekip'
+    | '/app/enstitisyon'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/founise'
+    | '/app/kes'
+    | '/app/otel'
+    | '/app/rapo'
+    | '/app/tach'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/ekip'
+    | '/app/enstitisyon'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/founise'
+    | '/app/kes'
+    | '/app/otel'
+    | '/app/rapo'
+    | '/app/tach'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,14 +237,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/ekip': {
+      id: '/app/ekip'
+      path: '/ekip'
+      fullPath: '/app/ekip'
+      preLoaderRoute: typeof AppEkipRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/enstitisyon': {
+      id: '/app/enstitisyon'
+      path: '/enstitisyon'
+      fullPath: '/app/enstitisyon'
+      preLoaderRoute: typeof AppEnstitisyonRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/estok': {
+      id: '/app/estok'
+      path: '/estok'
+      fullPath: '/app/estok'
+      preLoaderRoute: typeof AppEstokRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/faktirasyon': {
+      id: '/app/faktirasyon'
+      path: '/faktirasyon'
+      fullPath: '/app/faktirasyon'
+      preLoaderRoute: typeof AppFaktirasyonRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/founise': {
+      id: '/app/founise'
+      path: '/founise'
+      fullPath: '/app/founise'
+      preLoaderRoute: typeof AppFouniseRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/kes': {
+      id: '/app/kes'
+      path: '/kes'
+      fullPath: '/app/kes'
+      preLoaderRoute: typeof AppKesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/otel': {
+      id: '/app/otel'
+      path: '/otel'
+      fullPath: '/app/otel'
+      preLoaderRoute: typeof AppOtelRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/rapo': {
+      id: '/app/rapo'
+      path: '/rapo'
+      fullPath: '/app/rapo'
+      preLoaderRoute: typeof AppRapoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tach': {
+      id: '/app/tach'
+      path: '/tach'
+      fullPath: '/app/tach'
+      preLoaderRoute: typeof AppTachRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppEkipRoute: typeof AppEkipRoute
+  AppEnstitisyonRoute: typeof AppEnstitisyonRoute
+  AppEstokRoute: typeof AppEstokRoute
+  AppFaktirasyonRoute: typeof AppFaktirasyonRoute
+  AppFouniseRoute: typeof AppFouniseRoute
+  AppKesRoute: typeof AppKesRoute
+  AppOtelRoute: typeof AppOtelRoute
+  AppRapoRoute: typeof AppRapoRoute
+  AppTachRoute: typeof AppTachRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppEkipRoute: AppEkipRoute,
+  AppEnstitisyonRoute: AppEnstitisyonRoute,
+  AppEstokRoute: AppEstokRoute,
+  AppFaktirasyonRoute: AppFaktirasyonRoute,
+  AppFouniseRoute: AppFouniseRoute,
+  AppKesRoute: AppKesRoute,
+  AppOtelRoute: AppOtelRoute,
+  AppRapoRoute: AppRapoRoute,
+  AppTachRoute: AppTachRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
