@@ -14,6 +14,10 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppEstokRouteImport } from './routes/app.estok'
+import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
+import { Route as AppKesRouteImport } from './routes/app.kes'
+import { Route as AppRapoRouteImport } from './routes/app.rapo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,18 +44,46 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEstokRoute = AppEstokRouteImport.update({
+  id: '/estok',
+  path: '/estok',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFaktirasyonRoute = AppFaktirasyonRouteImport.update({
+  id: '/faktirasyon',
+  path: '/faktirasyon',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKesRoute = AppKesRouteImport.update({
+  id: '/kes',
+  path: '/kes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRapoRoute = AppRapoRouteImport.update({
+  id: '/rapo',
+  path: '/rapo',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/rapo': typeof AppRapoRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/rapo': typeof AppRapoRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -60,14 +92,45 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/app/estok': typeof AppEstokRoute
+  '/app/faktirasyon': typeof AppFaktirasyonRoute
+  '/app/kes': typeof AppKesRoute
+  '/app/rapo': typeof AppRapoRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/enskripsyon' | '/login' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/kes'
+    | '/app/rapo'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/enskripsyon' | '/login' | '/app'
-  id: '__root__' | '/' | '/app' | '/enskripsyon' | '/login' | '/app/'
+  to:
+    | '/'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/kes'
+    | '/app/rapo'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/enskripsyon'
+    | '/login'
+    | '/app/estok'
+    | '/app/faktirasyon'
+    | '/app/kes'
+    | '/app/rapo'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,14 +177,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/estok': {
+      id: '/app/estok'
+      path: '/estok'
+      fullPath: '/app/estok'
+      preLoaderRoute: typeof AppEstokRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/faktirasyon': {
+      id: '/app/faktirasyon'
+      path: '/faktirasyon'
+      fullPath: '/app/faktirasyon'
+      preLoaderRoute: typeof AppFaktirasyonRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/kes': {
+      id: '/app/kes'
+      path: '/kes'
+      fullPath: '/app/kes'
+      preLoaderRoute: typeof AppKesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/rapo': {
+      id: '/app/rapo'
+      path: '/rapo'
+      fullPath: '/app/rapo'
+      preLoaderRoute: typeof AppRapoRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppEstokRoute: typeof AppEstokRoute
+  AppFaktirasyonRoute: typeof AppFaktirasyonRoute
+  AppKesRoute: typeof AppKesRoute
+  AppRapoRoute: typeof AppRapoRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppEstokRoute: AppEstokRoute,
+  AppFaktirasyonRoute: AppFaktirasyonRoute,
+  AppKesRoute: AppKesRoute,
+  AppRapoRoute: AppRapoRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
