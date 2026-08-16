@@ -20,6 +20,7 @@ import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
 import { Route as AppFouniseRouteImport } from './routes/app.founise'
 import { Route as AppKesRouteImport } from './routes/app.kes'
 import { Route as AppRapoRouteImport } from './routes/app.rapo'
+import { Route as AppTachRouteImport } from './routes/app.tach'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const AppRapoRoute = AppRapoRouteImport.update({
   path: '/rapo',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTachRoute = AppTachRouteImport.update({
+  id: '/tach',
+  path: '/tach',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/rapo': typeof AppRapoRoute
+  '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/rapo'
+    | '/app/tach'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/rapo'
+    | '/app/tach'
     | '/app'
   id:
     | '__root__'
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/rapo'
+    | '/app/tach'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -243,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRapoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/tach': {
+      id: '/app/tach'
+      path: '/tach'
+      fullPath: '/app/tach'
+      preLoaderRoute: typeof AppTachRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -253,6 +272,7 @@ interface AppRouteChildren {
   AppFouniseRoute: typeof AppFouniseRoute
   AppKesRoute: typeof AppKesRoute
   AppRapoRoute: typeof AppRapoRoute
+  AppTachRoute: typeof AppTachRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -263,6 +283,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFouniseRoute: AppFouniseRoute,
   AppKesRoute: AppKesRoute,
   AppRapoRoute: AppRapoRoute,
+  AppTachRoute: AppTachRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
