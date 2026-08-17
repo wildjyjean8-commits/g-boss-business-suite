@@ -22,6 +22,7 @@ import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
 import { Route as AppFouniseRouteImport } from './routes/app.founise'
 import { Route as AppKesRouteImport } from './routes/app.kes'
 import { Route as AppOtelRouteImport } from './routes/app.otel'
+import { Route as AppParametRouteImport } from './routes/app.paramet'
 import { Route as AppRapoRouteImport } from './routes/app.rapo'
 import { Route as AppTachRouteImport } from './routes/app.tach'
 
@@ -90,6 +91,11 @@ const AppOtelRoute = AppOtelRouteImport.update({
   path: '/otel',
   getParentRoute: () => AppRoute,
 } as any)
+const AppParametRoute = AppParametRouteImport.update({
+  id: '/paramet',
+  path: '/paramet',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRapoRoute = AppRapoRouteImport.update({
   id: '/rapo',
   path: '/rapo',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app': typeof AppIndexRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -305,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOtelRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/paramet': {
+      id: '/app/paramet'
+      path: '/paramet'
+      fullPath: '/app/paramet'
+      preLoaderRoute: typeof AppParametRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/rapo': {
       id: '/app/rapo'
       path: '/rapo'
@@ -331,6 +350,7 @@ interface AppRouteChildren {
   AppFouniseRoute: typeof AppFouniseRoute
   AppKesRoute: typeof AppKesRoute
   AppOtelRoute: typeof AppOtelRoute
+  AppParametRoute: typeof AppParametRoute
   AppRapoRoute: typeof AppRapoRoute
   AppTachRoute: typeof AppTachRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -345,6 +365,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFouniseRoute: AppFouniseRoute,
   AppKesRoute: AppKesRoute,
   AppOtelRoute: AppOtelRoute,
+  AppParametRoute: AppParametRoute,
   AppRapoRoute: AppRapoRoute,
   AppTachRoute: AppTachRoute,
   AppIndexRoute: AppIndexRoute,
