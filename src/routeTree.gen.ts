@@ -13,14 +13,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppEkipRouteImport } from './routes/app.ekip'
+import { Route as AppEnpresyonRouteImport } from './routes/app.enpresyon'
 import { Route as AppEnstitisyonRouteImport } from './routes/app.enstitisyon'
 import { Route as AppEstokRouteImport } from './routes/app.estok'
 import { Route as AppFaktirasyonRouteImport } from './routes/app.faktirasyon'
 import { Route as AppFouniseRouteImport } from './routes/app.founise'
 import { Route as AppKesRouteImport } from './routes/app.kes'
 import { Route as AppOtelRouteImport } from './routes/app.otel'
+import { Route as AppParametRouteImport } from './routes/app.paramet'
 import { Route as AppRapoRouteImport } from './routes/app.rapo'
 import { Route as AppTachRouteImport } from './routes/app.tach'
 
@@ -44,6 +47,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuperadminRoute = SuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -52,6 +60,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppEkipRoute = AppEkipRouteImport.update({
   id: '/ekip',
   path: '/ekip',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEnpresyonRoute = AppEnpresyonRouteImport.update({
+  id: '/enpresyon',
+  path: '/enpresyon',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEnstitisyonRoute = AppEnstitisyonRouteImport.update({
@@ -84,6 +97,11 @@ const AppOtelRoute = AppOtelRouteImport.update({
   path: '/otel',
   getParentRoute: () => AppRoute,
 } as any)
+const AppParametRoute = AppParametRouteImport.update({
+  id: '/paramet',
+  path: '/paramet',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRapoRoute = AppRapoRouteImport.update({
   id: '/rapo',
   path: '/rapo',
@@ -100,13 +118,16 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -115,13 +136,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app': typeof AppIndexRoute
@@ -132,13 +156,16 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
+  '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
   '/app/estok': typeof AppEstokRoute
   '/app/faktirasyon': typeof AppFaktirasyonRoute
   '/app/founise': typeof AppFouniseRoute
   '/app/kes': typeof AppKesRoute
   '/app/otel': typeof AppOtelRoute
+  '/app/paramet': typeof AppParametRoute
   '/app/rapo': typeof AppRapoRoute
   '/app/tach': typeof AppTachRoute
   '/app/': typeof AppIndexRoute
@@ -150,13 +177,16 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
+    | '/app/enpresyon'
     | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -165,13 +195,16 @@ export interface FileRouteTypes {
     | '/'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
+    | '/app/enpresyon'
     | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app'
@@ -181,13 +214,16 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
+    | '/app/enpresyon'
     | '/app/enstitisyon'
     | '/app/estok'
     | '/app/faktirasyon'
     | '/app/founise'
     | '/app/kes'
     | '/app/otel'
+    | '/app/paramet'
     | '/app/rapo'
     | '/app/tach'
     | '/app/'
@@ -198,6 +234,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   EnskripsyonRoute: typeof EnskripsyonRoute
   LoginRoute: typeof LoginRoute
+  SuperadminRoute: typeof SuperadminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -230,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -242,6 +286,13 @@ declare module '@tanstack/react-router' {
       path: '/ekip'
       fullPath: '/app/ekip'
       preLoaderRoute: typeof AppEkipRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/enpresyon': {
+      id: '/app/enpresyon'
+      path: '/enpresyon'
+      fullPath: '/app/enpresyon'
+      preLoaderRoute: typeof AppEnpresyonRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/enstitisyon': {
@@ -286,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOtelRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/paramet': {
+      id: '/app/paramet'
+      path: '/paramet'
+      fullPath: '/app/paramet'
+      preLoaderRoute: typeof AppParametRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/rapo': {
       id: '/app/rapo'
       path: '/rapo'
@@ -305,12 +363,14 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppEkipRoute: typeof AppEkipRoute
+  AppEnpresyonRoute: typeof AppEnpresyonRoute
   AppEnstitisyonRoute: typeof AppEnstitisyonRoute
   AppEstokRoute: typeof AppEstokRoute
   AppFaktirasyonRoute: typeof AppFaktirasyonRoute
   AppFouniseRoute: typeof AppFouniseRoute
   AppKesRoute: typeof AppKesRoute
   AppOtelRoute: typeof AppOtelRoute
+  AppParametRoute: typeof AppParametRoute
   AppRapoRoute: typeof AppRapoRoute
   AppTachRoute: typeof AppTachRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -318,12 +378,14 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppEkipRoute: AppEkipRoute,
+  AppEnpresyonRoute: AppEnpresyonRoute,
   AppEnstitisyonRoute: AppEnstitisyonRoute,
   AppEstokRoute: AppEstokRoute,
   AppFaktirasyonRoute: AppFaktirasyonRoute,
   AppFouniseRoute: AppFouniseRoute,
   AppKesRoute: AppKesRoute,
   AppOtelRoute: AppOtelRoute,
+  AppParametRoute: AppParametRoute,
   AppRapoRoute: AppRapoRoute,
   AppTachRoute: AppTachRoute,
   AppIndexRoute: AppIndexRoute,
@@ -336,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   EnskripsyonRoute: EnskripsyonRoute,
   LoginRoute: LoginRoute,
+  SuperadminRoute: SuperadminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
