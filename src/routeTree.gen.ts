@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppEkipRouteImport } from './routes/app.ekip'
 import { Route as AppEnpresyonRouteImport } from './routes/app.enpresyon'
@@ -44,6 +45,11 @@ const EnskripsyonRoute = EnskripsyonRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuperadminRoute = SuperadminRouteImport.update({
+  id: '/superadmin',
+  path: '/superadmin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   EnskripsyonRoute: typeof EnskripsyonRoute
   LoginRoute: typeof LoginRoute
+  SuperadminRoute: typeof SuperadminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/superadmin': {
+      id: '/superadmin'
+      path: '/superadmin'
+      fullPath: '/superadmin'
+      preLoaderRoute: typeof SuperadminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -378,6 +398,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   EnskripsyonRoute: EnskripsyonRoute,
   LoginRoute: LoginRoute,
+  SuperadminRoute: SuperadminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
