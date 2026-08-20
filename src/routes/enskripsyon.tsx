@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Apple,
@@ -57,6 +57,7 @@ export const Route = createFileRoute("/enskripsyon")({
 });
 
 const STEPS = ["Type de compte", "Choix du plan", "Info Business", "Vérification", "Paiement"];
+const DRAFT_KEY = "gboss_signup_draft";
 
 type AccountType = "biznis" | "institisyon";
 type SchoolKind = "klasik" | "pwofesyonel";
@@ -85,6 +86,70 @@ function SignupPage() {
   const [verified, setVerified] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [maxStepReached, setMaxStepReached] = useState(0);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) return;
+      try {
+        const draft = JSON.parse(raw) as {
+          accountType?: string;
+          schoolKind?: string;
+          plan?: string;
+          businesses?: number;
+          hotelAddon?: boolean;
+          students?: number;
+          sector?: string;
+          otherSector?: string;
+          bizName?: string;
+          phone?: string;
+          posEnabled?: boolean;
+          stockEnabled?: boolean;
+        };
+        if (typeof draft.accountType === "string") setAccountType(draft.accountType as AccountType);
+        if (typeof draft.schoolKind === "string") setSchoolKind(draft.schoolKind as SchoolKind);
+        if (typeof draft.plan === "string") setPlan(draft.plan as PlanId);
+        if (typeof draft.businesses === "number") setBusinesses(draft.businesses);
+        if (typeof draft.hotelAddon === "boolean") setHotelAddon(draft.hotelAddon);
+        if (typeof draft.students === "number") setStudents(draft.students);
+        if (typeof draft.sector === "string") setSector(draft.sector);
+        if (typeof draft.otherSector === "string") setOtherSector(draft.otherSector);
+        if (typeof draft.bizName === "string") setBizName(draft.bizName);
+        if (typeof draft.phone === "string") setPhone(draft.phone);
+        if (typeof draft.posEnabled === "boolean") setPosEnabled(draft.posEnabled);
+        if (typeof draft.stockEnabled === "boolean") setStockEnabled(draft.stockEnabled);
+        setEmail(data.session.user.email ?? "");
+        setVerified(true);
+        goToStep(4);
+        toast.success("Connecté avec Google — vérifiez le récapitulatif avant de démarrer");
+      } finally {
+        sessionStorage.removeItem(DRAFT_KEY);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function saveDraftForOAuth() {
+    sessionStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        accountType,
+        schoolKind,
+        plan,
+        businesses,
+        hotelAddon,
+        students,
+        sector,
+        otherSector,
+        bizName,
+        phone,
+        posEnabled,
+        stockEnabled,
+      }),
+    );
+  }
 
   const effectiveSector = sector === "Autre" ? otherSector || "Autre" : sector;
   const effectivePlan: PlanId = accountType === "institisyon" ? "kanpis" : plan;
@@ -486,7 +551,18 @@ function SignupPage() {
                   <Button variant="outline" disabled onClick={() => toast.info("Sign in with Apple")}>
                     <Apple className="size-4" /> Apple
                   </Button>
-                  <Button variant="outline" onClick={() => toast.info("Sign in with Google — à activer via le broker OAuth")}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      saveDraftForOAuth();
+                      const { error } = await supabase.auth.signInWithOAuth({
+                        provider: "google",
+                        options: { redirectTo: `${window.location.origin}/enskripsyon` },
+                      });
+                      if (error) toast.error(error.message);
+                    }}
+                  >
                     <Mail className="size-4" /> Google
                   </Button>
                 </div>

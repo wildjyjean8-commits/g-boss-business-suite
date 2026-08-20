@@ -152,7 +152,13 @@ function LoginPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => toast.info("Sign in with Google — à activer via le broker OAuth")}
+                onClick={async () => {
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: `${window.location.origin}/app` },
+                  });
+                  if (error) toast.error(error.message);
+                }}
               >
                 <Mail className="size-4" /> Continuer avec Google
               </Button>
