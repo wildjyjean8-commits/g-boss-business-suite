@@ -12,4 +12,9 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Deploy target: Netlify (native Nitro preset) instead of the Cloudflare default,
+  // so the app can be hosted on Netlify like WilDrywall Services.
+  nitro: {
+    preset: "netlify",
+  },
 });
