@@ -8,6 +8,7 @@ import {
   CreditCard,
   GraduationCap,
   Hotel,
+  Loader2,
   Mail,
   ShieldCheck,
   Store,
@@ -18,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -75,7 +77,14 @@ function SignupPage() {
   const [phone, setPhone] = useState("");
   const [posEnabled, setPosEnabled] = useState(true);
   const [stockEnabled, setStockEnabled] = useState(true);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(false);
+  const [finishing, setFinishing] = useState(false);
+  const [maxStepReached, setMaxStepReached] = useState(0);
 
   const effectiveSector = sector === "Autre" ? otherSector || "Autre" : sector;
   const effectivePlan: PlanId = accountType === "institisyon" ? "kanpis" : plan;
@@ -85,15 +94,127 @@ function SignupPage() {
   );
   const presetCategories = SECTOR_CATEGORIES[sector] ?? SECTOR_CATEGORIES["Autre"]!;
 
-  function next() {
+  function goToStep(s: number) {
+    setStep(s);
+    setMaxStepReached((m) => Math.max(m, s));
+  }
+
+  async function next() {
     if (step === 2) {
       if (!bizName.trim() || !email.includes("@")) {
         toast.error("Nom du business et email valides requis");
         return;
       }
+      if (password.length < 6) {
+        toast.error("Mot de passe : 6 caractères minimum");
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Les mots de passe ne correspondent pas");
+        return;
+      }
+
+      setSendingCode(true);
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            biz_name: bizName.trim(),
+            phone: phone.trim() || null,
+            sector: effectiveSector,
+            account_type: accountType,
+            plan: effectivePlan,
+          },
+        },
+      });
+      setSendingCode(false);
+
+      if (error) {
+        toast.error(
+          error.message === "User already registered"
+            ? "Un compte existe déjà avec cet email — connectez-vous plutôt"
+            : error.message,
+        );
+        return;
+      }
+
       toast.success(`Code envoyé à ${email} — valable ${VERIFICATION_CODE_MINUTES} minutes`);
+      goToStep(3);
+      return;
     }
-    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+
+    if (step === 3) {
+      if (!verified) {
+        toast.error("Entrez le code reçu par email avant de continuer");
+        return;
+      }
+    }
+
+    goToStep(Math.min(STEPS.length - 1, step + 1));
+  }
+
+  async function verifyCode() {
+    if (code.length !== 6) {
+      toast.error("Le code fait 6 chiffres");
+      return;
+    }
+    setVerifying(true);
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code,
+      type: "signup",
+    });
+    setVerifying(false);
+
+    if (error || !data.session) {
+      toast.error(error?.message === "Token has expired or is invalid"
+        ? "Code incorrect ou expiré"
+        : error?.message ?? "Erreur de vérification");
+      return;
+    }
+
+    setVerified(true);
+    toast.success("Email vérifié !");
+    goToStep(4);
+  }
+
+  async function finishSignup() {
+    setFinishing(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+
+    if (!userId) {
+      setFinishing(false);
+      toast.error("Session expirée — recommencez la vérification");
+      goToStep(3);
+      return;
+    }
+
+    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await supabase.from("businesses").insert({
+      owner_id: userId,
+      name: bizName.trim(),
+      sector: effectiveSector,
+      plan: effectivePlan,
+      pos_enabled: posEnabled,
+      stock_enabled: stockEnabled,
+      hotel_addon: hotelAddon,
+      status: "trial",
+      trial_ends_at: trialEndsAt,
+      phone: phone.trim() || null,
+      email: email.trim(),
+    });
+    setFinishing(false);
+
+    if (error) {
+      toast.error(`Erreur création business : ${error.message}`);
+      return;
+    }
+
+    toast.success(`Bienvenue ! ${TRIAL_DAYS} jours d'essai gratuit ont commencé.`);
+    navigate({ to: "/app" });
   }
 
   return (
@@ -104,8 +225,10 @@ function SignupPage() {
           {STEPS.map((label, i) => (
             <li key={label}>
               <button
-                onClick={() => setStep(i)}
+                onClick={() => i <= maxStepReached && setStep(i)}
+                disabled={i > maxStepReached}
                 className={cn(
+                  i > maxStepReached && "cursor-not-allowed opacity-50",
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                   i === step
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
@@ -252,6 +375,30 @@ function SignupPage() {
                   </div>
                 </div>
 
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pwd">Mot de passe</Label>
+                    <Input
+                      id="pwd"
+                      type="password"
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="6 caractères minimum"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="pwd2">Confirmer le mot de passe</Label>
+                    <Input
+                      id="pwd2"
+                      type="password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label>Secteur d'activité</Label>
                   <Select value={sector} onValueChange={setSector}>
@@ -298,26 +445,48 @@ function SignupPage() {
 
             {step === 3 ? (
               <div className="gb-card space-y-4 p-5">
-                <ShieldCheck className="size-8 text-kpi-green" />
-                <h2 className="font-display text-lg font-semibold">Code envoyé par email</h2>
+                {verified ? <Check className="size-8 text-kpi-green" /> : <ShieldCheck className="size-8 text-kpi-green" />}
+                <h2 className="font-display text-lg font-semibold">
+                  {verified ? "Email vérifié" : "Code envoyé par email"}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                   Saisissez le code à 6 chiffres envoyé à {email || "votre email"}. Valable{" "}
-                  {VERIFICATION_CODE_MINUTES} minutes. Les comptes créés via Apple ou Google sautent
-                  cette étape.
+                  {VERIFICATION_CODE_MINUTES} minutes.
                 </p>
                 <Input
                   className="gb-num max-w-xs text-center text-lg tracking-[0.4em]"
                   inputMode="numeric"
                   maxLength={6}
                   value={code}
+                  disabled={verified}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                   placeholder="000000"
                 />
-                <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => toast.info("Sign in with Apple")}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button onClick={verifyCode} disabled={verifying || verified || code.length !== 6}>
+                    {verifying ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+                    {verified ? "Vérifié" : "Vérifier le code"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={sendingCode}
+                    onClick={async () => {
+                      setSendingCode(true);
+                      const { error } = await supabase.auth.resend({ type: "signup", email: email.trim() });
+                      setSendingCode(false);
+                      if (error) toast.error(error.message);
+                      else toast.success("Nouveau code envoyé");
+                    }}
+                  >
+                    Renvoyer le code
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 border-t border-border pt-3">
+                  <Button variant="outline" disabled onClick={() => toast.info("Sign in with Apple")}>
                     <Apple className="size-4" /> Apple
                   </Button>
-                  <Button variant="outline" onClick={() => toast.info("Sign in with Google")}>
+                  <Button variant="outline" onClick={() => toast.info("Sign in with Google — à activer via le broker OAuth")}>
                     <Mail className="size-4" /> Google
                   </Button>
                 </div>
@@ -338,11 +507,13 @@ function SignupPage() {
                   <SummaryRow label="Total mensuel" value={`${price} HTG`} />
                 </dl>
                 <p className="rounded-lg bg-status-ok px-3 py-2 text-xs font-medium text-kpi-green">
-                  {TRIAL_DAYS} jours d'essai gratuit. Rappels aux jours 5, 7 et 8 par notification
-                  interne + SMS/WhatsApp.
+                  {TRIAL_DAYS} jours d'essai gratuit — aucun paiement requis maintenant. Rappels aux
+                  jours 5, 7 et 8 par notification interne + SMS/WhatsApp. Le paiement MonCash sera
+                  demandé avant la fin de l'essai (à activer prochainement).
                 </p>
-                <Button className="w-full" onClick={() => navigate({ to: "/app" })}>
-                  <CreditCard className="size-4" /> Payer par MonCash et ouvrir mon espace
+                <Button className="w-full" onClick={finishSignup} disabled={finishing || !verified}>
+                  {finishing ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+                  Démarrer mon essai gratuit
                 </Button>
               </div>
             ) : null}
@@ -357,7 +528,10 @@ function SignupPage() {
               Retour
             </Button>
             {step < STEPS.length - 1 ? (
-              <Button onClick={next}>Continuer</Button>
+              <Button onClick={next} disabled={sendingCode}>
+                {sendingCode ? <Loader2 className="size-4 animate-spin" /> : null}
+                Continuer
+              </Button>
             ) : (
               <Button asChild variant="outline">
                 <Link to="/login">
