@@ -23,6 +23,7 @@ import { LangSwitcher } from "./lang-switcher";
 import { useBiz } from "./biz-context";
 import { useI18n } from "@/lib/gboss/i18n";
 import { PLANS } from "@/lib/gboss/data";
+import { useSession, signOut } from "@/lib/gboss/use-session";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,6 +56,7 @@ const NAV: NavItem[] = [
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
   const { biz } = useBiz();
+  const { isSuperAdmin } = useSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const items = NAV.filter((item) => {
@@ -93,13 +95,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
       <div className="border-t border-sidebar-border p-3">
-        <Link
-          to="/superadmin"
-          onClick={onNavigate}
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-gold hover:bg-sidebar-accent"
-        >
-          <Building2 className="size-4" /> {t("superadmin")}
-        </Link>
+        {isSuperAdmin ? (
+          <Link
+            to="/superadmin"
+            onClick={onNavigate}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-gold hover:bg-sidebar-accent"
+          >
+            <Building2 className="size-4" /> {t("superadmin")}
+          </Link>
+        ) : null}
         <p className="mt-2 px-3 text-[10px] text-sidebar-foreground/50">
           {PLANS[biz.plan].name} · {PLANS[biz.plan].price} {PLANS[biz.plan].unit}
         </p>
@@ -143,6 +147,27 @@ function BizSwitcher() {
   );
 }
 
+function UserMenu() {
+  const { session } = useSession();
+  const email = session?.user.email ?? "";
+  const initials = email.slice(0, 2).toUpperCase() || "??";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="grid size-9 place-items-center rounded-full bg-accent font-display text-sm font-bold text-accent-foreground">
+          {initials}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel className="truncate text-xs">{email}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={signOut}>Déconnexion</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { biz } = useBiz();
@@ -175,9 +200,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
 
           <LangSwitcher />
-          <span className="grid size-9 place-items-center rounded-full bg-accent font-display text-sm font-bold text-accent-foreground">
-            JW
-          </span>
+          <UserMenu />
         </header>
 
         <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>

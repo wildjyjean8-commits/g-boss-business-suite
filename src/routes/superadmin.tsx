@@ -1,11 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
   Building2,
   DollarSign,
   GraduationCap,
-  ShieldCheck,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -26,7 +26,6 @@ import {
   PLANS,
   PLATFORM_ACCOUNTS,
   PLATFORM_GROWTH,
-  SUPER_ADMIN_EMAIL,
   accountMRR,
   money,
   type PlanId,
@@ -35,6 +34,27 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/superadmin")({
+  beforeLoad: async ({ location }) => {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !sessionData.session) {
+      throw redirect({
+        to: "/login",
+        search: { redirect: location.href },
+      });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", sessionData.session.user.id)
+      .single();
+
+    if (profileError || !profile?.is_super_admin) {
+      throw redirect({ to: "/app" });
+    }
+
+    return { session: sessionData.session };
+  },
   head: () => ({
     meta: [
       { title: "Super-Admin — Pilotage plateforme G-Boss" },
@@ -69,6 +89,7 @@ const STATUS_LABEL = {
 } as const;
 
 function SuperAdmin() {
+  const { session } = Route.useRouteContext();
   const [filter, setFilter] = useState<"tous" | keyof typeof STATUS_LABEL>("tous");
 
   const metrics = useMemo(() => {
@@ -92,10 +113,7 @@ function SuperAdmin() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3">
         <GBossLogo />
-        <span className="ml-auto hidden items-center gap-2 rounded-full bg-sidebar-accent px-3 py-1.5 text-xs font-semibold text-gold sm:flex">
-          <ShieldCheck className="size-3.5" /> 2FA Authenticator actif
-        </span>
-        <Button asChild variant="ghost" size="sm" className="gap-2 text-white hover:bg-sidebar-accent hover:text-white">
+        <Button asChild variant="ghost" size="sm" className="ml-auto gap-2 text-white hover:bg-sidebar-accent hover:text-white">
           <Link to="/app">
             <ArrowLeft className="size-4" /> App
           </Link>
@@ -105,7 +123,7 @@ function SuperAdmin() {
       <main className="p-4 lg:p-6">
         <PageHeader
           title="Console Super-Admin"
-          subtitle={`Connecté : ${SUPER_ADMIN_EMAIL} · pilotage global de la plateforme G-Boss`}
+          subtitle={`Connecté : ${session.user.email} · pilotage global de la plateforme G-Boss`}
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

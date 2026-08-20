@@ -7,20 +7,911 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.15"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          id: string
+          owner_id: string
+          name: string
+          sector: string
+          plan: string
+          currency: string
+          exchange_rate: number
+          pos_enabled: boolean
+          stock_enabled: boolean
+          hotel_addon: boolean
+          school_addon: boolean
+          tax_rate: number
+          status: string
+          trial_ends_at: string | null
+          paid_on_time: boolean
+          legal_name: string | null
+          address: string | null
+          phone: string | null
+          email: string | null
+          tax_number: string | null
+          logo_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          name: string
+          sector: string
+          plan: string
+          currency?: string
+          exchange_rate?: number
+          pos_enabled?: boolean
+          stock_enabled?: boolean
+          hotel_addon?: boolean
+          school_addon?: boolean
+          tax_rate?: number
+          status?: string
+          trial_ends_at?: string | null
+          paid_on_time?: boolean
+          legal_name?: string | null
+          address?: string | null
+          phone?: string | null
+          email?: string | null
+          tax_number?: string | null
+          logo_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          name?: string
+          sector?: string
+          plan?: string
+          currency?: string
+          exchange_rate?: number
+          pos_enabled?: boolean
+          stock_enabled?: boolean
+          hotel_addon?: boolean
+          school_addon?: boolean
+          tax_rate?: number
+          status?: string
+          trial_ends_at?: string | null
+          paid_on_time?: boolean
+          legal_name?: string | null
+          address?: string | null
+          phone?: string | null
+          email?: string | null
+          tax_number?: string | null
+          logo_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_members: {
+        Row: {
+          id: string
+          business_id: string
+          user_id: string | null
+          name: string
+          role: string
+          department: string | null
+          phone: string | null
+          active: boolean
+          present: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          user_id?: string | null
+          name: string
+          role: string
+          department?: string | null
+          phone?: string | null
+          active?: boolean
+          present?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          user_id?: string | null
+          name?: string
+          role?: string
+          department?: string | null
+          phone?: string | null
+          active?: boolean
+          present?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          phone: string | null
+          email: string | null
+          address: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          phone?: string | null
+          email?: string | null
+          address?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_verification_codes: {
+        Row: {
+          id: string
+          email: string
+          code_hash: string
+          expires_at: string
+          used: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          email: string
+          code_hash: string
+          expires_at?: string
+          used?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          code_hash?: string
+          expires_at?: string
+          used?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          id: string
+          business_id: string
+          category: string | null
+          description: string | null
+          amount: number
+          occurred_at: string
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          category?: string | null
+          description?: string | null
+          amount?: number
+          occurred_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          category?: string | null
+          description?: string | null
+          amount?: number
+          occurred_at?: string
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      hotel_reservations: {
+        Row: {
+          id: string
+          business_id: string
+          unit_id: string
+          guest_name: string
+          guest_id_number: string | null
+          nationality: string | null
+          adults: number
+          children: number
+          checkin: string
+          checkout: string
+          amount_paid: number
+          agreed_damage_policy: boolean
+          agreed_noise_policy: boolean
+          id_document_photo_url: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          unit_id: string
+          guest_name: string
+          guest_id_number?: string | null
+          nationality?: string | null
+          adults?: number
+          children?: number
+          checkin: string
+          checkout: string
+          amount_paid?: number
+          agreed_damage_policy?: boolean
+          agreed_noise_policy?: boolean
+          id_document_photo_url?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          unit_id?: string
+          guest_name?: string
+          guest_id_number?: string | null
+          nationality?: string | null
+          adults?: number
+          children?: number
+          checkin?: string
+          checkout?: string
+          amount_paid?: number
+          agreed_damage_policy?: boolean
+          agreed_noise_policy?: boolean
+          id_document_photo_url?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hotel_units: {
+        Row: {
+          id: string
+          business_id: string
+          label: string
+          number: string
+          type: string
+          bedrooms: number
+          living_room: boolean
+          kitchen: boolean
+          bathrooms: number
+          capacity: number
+          amenities: string[]
+          price_per_night: number
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          label: string
+          number: string
+          type: string
+          bedrooms?: number
+          living_room?: boolean
+          kitchen?: boolean
+          bathrooms?: number
+          capacity?: number
+          amenities?: string[]
+          price_per_night?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          label?: string
+          number?: string
+          type?: string
+          bedrooms?: number
+          living_room?: boolean
+          kitchen?: boolean
+          bathrooms?: number
+          capacity?: number
+          amenities?: string[]
+          price_per_night?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          id: string
+          business_id: string
+          reference: string
+          client: string
+          amount: number
+          status: string
+          issue_date: string
+          due_date: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          reference: string
+          client: string
+          amount?: number
+          status?: string
+          issue_date?: string
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          reference?: string
+          client?: string
+          amount?: number
+          status?: string
+          issue_date?: string
+          due_date?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      moncash_transactions: {
+        Row: {
+          id: string
+          business_id: string | null
+          order_id: string
+          moncash_transaction_id: string | null
+          amount: number
+          currency: string
+          status: string
+          purpose: string
+          reference_id: string | null
+          raw_response: Json | null
+          created_at: string
+          confirmed_at: string | null
+        }
+        Insert: {
+          id?: string
+          business_id?: string | null
+          order_id: string
+          moncash_transaction_id?: string | null
+          amount?: number
+          currency?: string
+          status?: string
+          purpose?: string
+          reference_id?: string | null
+          raw_response?: Json | null
+          created_at?: string
+          confirmed_at?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string | null
+          order_id?: string
+          moncash_transaction_id?: string | null
+          amount?: number
+          currency?: string
+          status?: string
+          purpose?: string
+          reference_id?: string | null
+          raw_response?: Json | null
+          created_at?: string
+          confirmed_at?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          id: string
+          business_id: string
+          sku: string
+          name: string
+          category: string | null
+          price: number
+          cost: number
+          stock: number
+          min_stock: number
+          supplier_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          sku: string
+          name: string
+          category?: string | null
+          price?: number
+          cost?: number
+          stock?: number
+          min_stock?: number
+          supplier_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          sku?: string
+          name?: string
+          category?: string | null
+          price?: number
+          cost?: number
+          stock?: number
+          min_stock?: number
+          supplier_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          preferred_language: string
+          is_super_admin: boolean
+          created_at: string
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          preferred_language?: string
+          is_super_admin?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          preferred_language?: string
+          is_super_admin?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          id: string
+          sale_id: string
+          product_id: string | null
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          sale_id: string
+          product_id?: string | null
+          quantity?: number
+          unit_price?: number
+        }
+        Update: {
+          id?: string
+          sale_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: []
+      }
+      sales: {
+        Row: {
+          id: string
+          business_id: string
+          occurred_at: string
+          payment_method: string | null
+          subtotal: number
+          tax_amount: number
+          total: number
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          occurred_at?: string
+          payment_method?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total?: number
+          created_by?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          occurred_at?: string
+          payment_method?: string | null
+          subtotal?: number
+          tax_amount?: number
+          total?: number
+          created_by?: string | null
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          classroom: string | null
+          average: number | null
+          attendance: number | null
+          status: string
+          guardian: string | null
+          guardian_user_id: string | null
+          student_user_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          classroom?: string | null
+          average?: number | null
+          attendance?: number | null
+          status?: string
+          guardian?: string | null
+          guardian_user_id?: string | null
+          student_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          classroom?: string | null
+          average?: number | null
+          attendance?: number | null
+          status?: string
+          guardian?: string | null
+          guardian_user_id?: string | null
+          student_user_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      student_grades: {
+        Row: {
+          id: string
+          business_id: string
+          student_id: string
+          subject: string
+          period: string
+          grade: number
+          max_grade: number
+          comment: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          student_id: string
+          subject: string
+          period: string
+          grade: number
+          max_grade?: number
+          comment?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          student_id?: string
+          subject?: string
+          period?: string
+          grade?: number
+          max_grade?: number
+          comment?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      student_attendance: {
+        Row: {
+          id: string
+          business_id: string
+          student_id: string
+          attended_on: string
+          present: boolean
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          student_id: string
+          attended_on?: string
+          present?: boolean
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          student_id?: string
+          attended_on?: string
+          present?: boolean
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      student_payments: {
+        Row: {
+          id: string
+          business_id: string
+          student_id: string
+          label: string
+          amount_due: number
+          amount_paid: number
+          due_date: string | null
+          paid_at: string | null
+          status: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          student_id: string
+          label: string
+          amount_due?: number
+          amount_paid?: number
+          due_date?: string | null
+          paid_at?: string | null
+          status?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          student_id?: string
+          label?: string
+          amount_due?: number
+          amount_paid?: number
+          due_date?: string | null
+          paid_at?: string | null
+          status?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      subscription_payments: {
+        Row: {
+          id: string
+          business_id: string
+          amount: number
+          currency: string
+          paid_on_time: boolean
+          period_start: string
+          period_end: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          amount: number
+          currency?: string
+          paid_on_time?: boolean
+          period_start: string
+          period_end: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          amount?: number
+          currency?: string
+          paid_on_time?: boolean
+          period_start?: string
+          period_end?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      suppliers: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          category: string | null
+          contact: string | null
+          rating: number | null
+          on_gboss: boolean
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          category?: string | null
+          contact?: string | null
+          rating?: number | null
+          on_gboss?: boolean
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          category?: string | null
+          contact?: string | null
+          rating?: number | null
+          on_gboss?: boolean
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          id: string
+          business_id: string
+          title: string
+          description: string | null
+          status: string
+          priority: string
+          assignee_id: string | null
+          due_date: string | null
+          progress: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          title: string
+          description?: string | null
+          status?: string
+          priority?: string
+          assignee_id?: string | null
+          due_date?: string | null
+          progress?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          title?: string
+          description?: string | null
+          status?: string
+          priority?: string
+          assignee_id?: string | null
+          due_date?: string | null
+          progress?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      v_employee_performance: {
+        Row: {
+          member_id: string | null
+          business_id: string | null
+          name: string | null
+          tasks_done: number | null
+          tasks_total: number | null
+        }
+        Relationships: []
+      }
+      v_invoice_metrics: {
+        Row: {
+          business_id: string | null
+          total: number | null
+          paid: number | null
+          pending: number | null
+          expired: number | null
+          month: number | null
+        }
+        Relationships: []
+      }
+      v_platform_growth: {
+        Row: {
+          month: string | null
+          new_accounts: number | null
+          revenue: number | null
+        }
+        Relationships: []
+      }
+      v_stock_metrics: {
+        Row: {
+          business_id: string | null
+          value: number | null
+          retail: number | null
+          units: number | null
+          total: number | null
+          crit_count: number | null
+          low_count: number | null
+        }
+        Relationships: []
+      }
+      v_task_metrics: {
+        Row: {
+          business_id: string | null
+          total: number | null
+          todo: number | null
+          doing: number | null
+          review: number | null
+          blocked: number | null
+          done: number | null
+          unassigned: number | null
+        }
+        Relationships: []
+      }
+      v_week_metrics: {
+        Row: {
+          business_id: string | null
+          day: string | null
+          revenue: number | null
+          expense: number | null
+          orders: number | null
+        }
+        Relationships: []
+      }
+      v_student_payment_summary: {
+        Row: {
+          business_id: string | null
+          total_items: number | null
+          total_due: number | null
+          total_paid: number | null
+          total_outstanding: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_business_member: {
+        Args: { p_business_id: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_student_or_guardian: {
+        Args: { p_student_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
