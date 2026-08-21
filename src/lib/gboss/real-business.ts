@@ -1,14 +1,22 @@
 /**
  * Pon ant vrè tab `businesses` Supabase la ak done demo yo.
  *
- * Pou kounye a, sèlman idantite/paramèt biznis la vin reyèl (non, sektè, plan,
- * monnè/to chanj, switch Kès/Vant, Estòk, add-on Otèl/Lekòl, taks). Kolèksyon
- * yo (pwodwi, faktè, tach, anplwaye, founisè, elèv, elatriye) rete done demo
- * jiskaske chak modil branche sou pwòp tab Supabase pa yo pi devan.
+ * Idantite/paramèt biznis la (non, sektè, plan, monnè/to chanj, switch Kès/Vant,
+ * Estòk, add-on Otèl/Lekòl, taks) soti nan Supabase. Kolèksyon operasyonèl yo
+ * (pwodwi, faktè, tach, anplwaye, founisè, chif semenn, inite, elèv) kòmanse
+ * VID pou chak vrè biznis — pa gen okenn done fiktif — jiskaske chak modil
+ * branche sou pwòp tab Supabase pa yo pi devan.
  */
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { BUSINESSES, TRIAL_DAYS, type Business, type PlanId } from "./data";
+import { TRIAL_DAYS, type Business, type DayPoint, type PlanId } from "./data";
+
+const EMPTY_WEEK: DayPoint[] = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day) => ({
+  day,
+  revenue: 0,
+  expense: 0,
+  orders: 0,
+}));
 
 export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> {
   const { data, error } = await supabase
@@ -24,11 +32,7 @@ export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> 
 
   if (!data || data.length === 0) return [];
 
-  // Modèl kolèksyon demo (pwodwi/faktè/tach/elatriye) — rete plasholder pou kounye a.
-  const template = BUSINESSES[0]!;
-
   return data.map((row): Business => ({
-    ...template,
     id: row.id,
     name: row.name,
     sector: row.sector,
@@ -40,6 +44,14 @@ export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> 
     hotelAddon: row.hotel_addon,
     schoolAddon: row.school_addon,
     taxRate: row.tax_rate,
+    products: [],
+    invoices: [],
+    tasks: [],
+    employees: [],
+    suppliers: [],
+    week: EMPTY_WEEK,
+    units: [],
+    students: [],
   }));
 }
 

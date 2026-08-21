@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { BUSINESSES, type Business } from "@/lib/gboss/data";
+import { useNavigate } from "@tanstack/react-router";
+import type { Business } from "@/lib/gboss/data";
 import { ensureOwnedBusiness } from "@/lib/gboss/real-business";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,8 +14,10 @@ type Ctx = {
 const BizContext = createContext<Ctx | null>(null);
 
 export function BizProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [bizId, setBizId] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -23,13 +26,19 @@ export function BizProvider({ children }: { children: ReactNode }) {
       const { data } = await supabase.auth.getSession();
       const user = data.session?.user;
       const owned = user ? await ensureOwnedBusiness(user.id, user) : [];
-      // Repli sou done demo si pa gen okenn biznis reyèl jwenn (pa ta dwe rive
-      // nòmalman, /app deja egzije yon sesyon valid + enskripsyon kreye 1 biznis).
-      const list = owned.length > 0 ? owned : BUSINESSES;
 
       if (!active) return;
-      setBusinesses(list);
-      setBizId(list[0]!.id);
+
+      if (owned.length === 0) {
+        // Pa gen okenn done fiktif nan repli — si vrèman pa gen biznis mare ak
+        // kont lan (menm apre tantativ rekiperasyon otomatik), voye itilizatè a
+        // fini enskripsyon an olye montre chif envante.
+        setFailed(true);
+        return;
+      }
+
+      setBusinesses(owned);
+      setBizId(owned[0]!.id);
     })();
 
     return () => {
@@ -46,6 +55,26 @@ export function BizProvider({ children }: { children: ReactNode }) {
       setBizId,
     };
   }, [businesses, bizId]);
+
+  if (failed) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#F8F9FE] px-6 text-center">
+        <p className="font-display text-lg font-semibold text-[#0A0A14]">
+          Nou pa jwenn biznis mare ak kont ou a
+        </p>
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Fòk ou fini kreye biznis ou a anvan ou ka antre nan espas travay la.
+        </p>
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/enskripsyon" })}
+          className="mt-2 rounded-md bg-[#3721FF] px-4 py-2 text-sm font-semibold text-white"
+        >
+          Fini kreye biznis mwen an
+        </button>
+      </div>
+    );
+  }
 
   if (!value) {
     return (
