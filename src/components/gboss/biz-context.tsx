@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { BUSINESSES, type Business } from "@/lib/gboss/data";
-import { fetchOwnedBusinesses } from "@/lib/gboss/real-business";
+import { ensureOwnedBusiness } from "@/lib/gboss/real-business";
 import { supabase } from "@/integrations/supabase/client";
 
 type Ctx = {
@@ -21,8 +21,8 @@ export function BizProvider({ children }: { children: ReactNode }) {
 
     (async () => {
       const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user.id;
-      const owned = userId ? await fetchOwnedBusinesses(userId) : [];
+      const user = data.session?.user;
+      const owned = user ? await ensureOwnedBusiness(user.id, user) : [];
       // Repli sou done demo si pa gen okenn biznis reyèl jwenn (pa ta dwe rive
       // nòmalman, /app deja egzije yon sesyon valid + enskripsyon kreye 1 biznis).
       const list = owned.length > 0 ? owned : BUSINESSES;
