@@ -180,32 +180,38 @@ function SignupPage() {
       }
 
       setSendingCode(true);
-      const { error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            biz_name: bizName.trim(),
-            phone: phone.trim() || null,
-            sector: effectiveSector,
-            account_type: accountType,
-            plan: effectivePlan,
+      try {
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              biz_name: bizName.trim(),
+              phone: phone.trim() || null,
+              sector: effectiveSector,
+              account_type: accountType,
+              plan: effectivePlan,
+            },
           },
-        },
-      });
-      setSendingCode(false);
+        });
 
-      if (error) {
-        toast.error(
-          error.message === "User already registered"
-            ? "Un compte existe déjà avec cet email — connectez-vous plutôt"
-            : error.message,
-        );
-        return;
+        if (error) {
+          toast.error(
+            error.message === "User already registered"
+              ? "Un compte existe déjà avec cet email — connectez-vous plutôt"
+              : error.message,
+          );
+          return;
+        }
+
+        toast.success(`Code envoyé à ${email} — valable ${VERIFICATION_CODE_MINUTES} minutes`);
+        goToStep(3);
+      } catch (err) {
+        console.error("[enskripsyon] signUp failed", err);
+        toast.error("Impossible de contacter le serveur — vérifiez votre connexion et réessayez");
+      } finally {
+        setSendingCode(false);
       }
-
-      toast.success(`Code envoyé à ${email} — valable ${VERIFICATION_CODE_MINUTES} minutes`);
-      goToStep(3);
       return;
     }
 
@@ -225,61 +231,74 @@ function SignupPage() {
       return;
     }
     setVerifying(true);
-    const { data, error } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token: code,
-      type: "signup",
-    });
-    setVerifying(false);
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: code,
+        type: "signup",
+      });
 
-    if (error || !data.session) {
-      toast.error(error?.message === "Token has expired or is invalid"
-        ? "Code incorrect ou expiré"
-        : error?.message ?? "Erreur de vérification");
-      return;
+      if (error || !data.session) {
+        toast.error(
+          error?.message === "Token has expired or is invalid"
+            ? "Code incorrect ou expiré"
+            : error?.message ?? "Erreur de vérification",
+        );
+        return;
+      }
+
+      setVerified(true);
+      toast.success("Email vérifié !");
+      goToStep(4);
+    } catch (err) {
+      console.error("[enskripsyon] verifyOtp failed", err);
+      toast.error("Impossible de contacter le serveur — vérifiez votre connexion et réessayez");
+    } finally {
+      setVerifying(false);
     }
-
-    setVerified(true);
-    toast.success("Email vérifié !");
-    goToStep(4);
   }
 
   async function finishSignup() {
     setFinishing(true);
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user.id;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
 
-    if (!userId) {
+      if (!userId) {
+        toast.error("Session expirée — recommencez la vérification");
+        goToStep(3);
+        return;
+      }
+
+      const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+      const { error } = await supabase.from("businesses").insert({
+        owner_id: userId,
+        name: bizName.trim(),
+        sector: effectiveSector,
+        plan: effectivePlan,
+        pos_enabled: posEnabled,
+        stock_enabled: stockEnabled,
+        hotel_addon: hotelAddon,
+        status: "trial",
+        trial_ends_at: trialEndsAt,
+        phone: phone.trim() || null,
+        email: email.trim(),
+      });
+
+      if (error) {
+        toast.error(`Erreur création business : ${error.message}`);
+        return;
+      }
+
+      toast.success(`Bienvenue ! ${TRIAL_DAYS} jours d'essai gratuit ont commencé.`);
+      navigate({ to: "/app" });
+    } catch (err) {
+      console.error("[enskripsyon] finishSignup failed", err);
+      toast.error("Impossible de contacter le serveur — vérifiez votre connexion et réessayez");
+    } finally {
       setFinishing(false);
-      toast.error("Session expirée — recommencez la vérification");
-      goToStep(3);
-      return;
     }
-
-    const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-
-    const { error } = await supabase.from("businesses").insert({
-      owner_id: userId,
-      name: bizName.trim(),
-      sector: effectiveSector,
-      plan: effectivePlan,
-      pos_enabled: posEnabled,
-      stock_enabled: stockEnabled,
-      hotel_addon: hotelAddon,
-      status: "trial",
-      trial_ends_at: trialEndsAt,
-      phone: phone.trim() || null,
-      email: email.trim(),
-    });
-    setFinishing(false);
-
-    if (error) {
-      toast.error(`Erreur création business : ${error.message}`);
-      return;
-    }
-
-    toast.success(`Bienvenue ! ${TRIAL_DAYS} jours d'essai gratuit ont commencé.`);
-    navigate({ to: "/app" });
   }
 
   return (
