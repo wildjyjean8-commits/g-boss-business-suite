@@ -280,7 +280,7 @@ function SignupPage() {
         pos_enabled: posEnabled,
         stock_enabled: stockEnabled,
         hotel_addon: hotelAddon,
-        status: "trial",
+        status: "essai",
         trial_ends_at: trialEndsAt,
         phone: phone.trim() || null,
         email: email.trim(),
