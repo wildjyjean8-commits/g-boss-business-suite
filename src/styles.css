@@ -82,7 +82,7 @@
 :root {
   --radius: 0.875rem;
 
-  --background: #f8f9fe;
+  --background: #f5f7ff;
   --foreground: #0a0a14;
   --card: #ffffff;
   --card-foreground: #0a0a14;
@@ -190,4 +190,15 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--muted-foreground);
+}
+
+/* Fond radial doux appliqué partout où bg-background est utilisé (surcharge
+   volontairement la simple background-color générée par Tailwind, dont la
+   spécificité en @layer perd face à cette règle non "layered"). */
+body,
+.bg-background {
+  background:
+    radial-gradient(circle at 80% 10%, rgba(55, 48, 245, 0.08), transparent 30%),
+    radial-gradient(circle at 10% 40%, rgba(59, 130, 246, 0.05), transparent 25%),
+    #f5f7ff;
 }
