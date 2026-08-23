@@ -1,11 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bluetooth, Printer, Wifi } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, Bluetooth, Loader2, Printer, Wifi } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 import { useBiz } from "@/components/gboss/biz-context";
-import { PageHeader, Panel, StatusPill } from "@/components/gboss/ui";
+import { PageHeader, Panel } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/gboss/data";
+import { fetchReceipts } from "@/lib/gboss/accounting";
+import { fetchSaleReceiptDetails } from "@/lib/gboss/pos";
+import { printReceipt, type ReceiptFormat } from "@/lib/gboss/print-receipt";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/enpresyon")({
@@ -14,93 +18,176 @@ export const Route = createFileRoute("/app/enpresyon")({
       { title: "Impression — G-Boss" },
       {
         name: "description",
-        content: "Imprimez reçus thermiques 58/80 mm et factures A4 via WiFi ou Bluetooth (Android).",
+        content: "Imprimez reçus thermiques 58/80 mm et factures A4 via l'imprimante système de votre appareil.",
       },
       { property: "og:title", content: "Impression — G-Boss" },
-      { property: "og:description", content: "Configuration des imprimantes thermiques et A4 de votre business." },
+      { property: "og:description", content: "Aperçu et impression réelle des reçus de votre business." },
     ],
   }),
   component: Printing,
 });
 
-const FORMATS = [
+const FORMATS: { id: ReceiptFormat; label: string; desc: string }[] = [
   { id: "58", label: "Thermique 58 mm", desc: "Reçus de caisse compacts" },
   { id: "80", label: "Thermique 80 mm", desc: "Reçus détaillés / cuisine" },
   { id: "a4", label: "Facture A4", desc: "Factures officielles avec taxes" },
-] as const;
-
-const PRINTERS = [
-  { id: "pr1", name: "Caisse — Xprinter 80", conn: "wifi" as const, ip: "192.168.1.42", ready: true },
-  { id: "pr2", name: "Cuisine — Goojprt 58", conn: "bluetooth" as const, ip: "BT:3C:2A:11", ready: true },
-  { id: "pr3", name: "Bureau — HP LaserJet A4", conn: "wifi" as const, ip: "192.168.1.77", ready: false },
 ];
 
 function Printing() {
   const { biz } = useBiz();
-  const [format, setFormat] = useState<string>("80");
-  const inv = biz.invoices[0];
+  const [format, setFormat] = useState<ReceiptFormat>("80");
+  const [printing, setPrinting] = useState(false);
+
+  const receiptsQuery = useQuery({
+    queryKey: ["receipts", biz.id],
+    queryFn: () => fetchReceipts(biz.id),
+  });
+
+  const lastReceipt = receiptsQuery.data?.[0] ?? null;
+
+  const preview = useMemo(() => {
+    if (!lastReceipt) return null;
+    return {
+      reference: lastReceipt.reference,
+      client: lastReceipt.party ?? "—",
+      amount: lastReceipt.amount,
+    };
+  }, [lastReceipt]);
+
+  async function handlePrintLast() {
+    if (!lastReceipt) {
+      toast.error("Pa gen okenn resi pou enprime pou kounye a");
+      return;
+    }
+    setPrinting(true);
+    try {
+      if (lastReceipt.source === "vant" && lastReceipt.source_id) {
+        const { sale, lines } = await fetchSaleReceiptDetails(lastReceipt.source_id);
+        printReceipt({
+          businessName: biz.name,
+          reference: lastReceipt.reference,
+          date: new Date(sale.occurred_at).toLocaleString("fr-FR"),
+          client: lastReceipt.party,
+          lines,
+          subtotal: sale.subtotal,
+          tax: sale.tax_amount,
+          taxRate: biz.taxRate,
+          total: sale.total,
+          currency: biz.currency,
+          paymentMethod: sale.payment_method ?? "kach",
+          format,
+        });
+      } else {
+        // Resi manyèl oswa ki soti nan yon fakti — pa gen detay atik pa atik,
+        // n'ap enprime yon sèl liy ak montan total la.
+        printReceipt({
+          businessName: biz.name,
+          reference: lastReceipt.reference,
+          date: new Date(lastReceipt.receipt_date).toLocaleDateString("fr-FR"),
+          client: lastReceipt.party,
+          lines: [{ name: lastReceipt.kind === "vant" ? "Vant" : "Depans", qty: 1, unitPrice: lastReceipt.amount }],
+          subtotal: lastReceipt.amount,
+          tax: 0,
+          taxRate: 0,
+          total: lastReceipt.amount,
+          currency: biz.currency,
+          paymentMethod: "kach",
+          format,
+        });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan chajman resi a");
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  function handleTestPrint() {
+    printReceipt({
+      businessName: biz.name,
+      reference: "TEST",
+      date: new Date().toLocaleString("fr-FR"),
+      client: null,
+      lines: [{ name: "Paj tès enpresyon", qty: 1, unitPrice: 0 }],
+      subtotal: 0,
+      tax: 0,
+      taxRate: 0,
+      total: 0,
+      currency: biz.currency,
+      paymentMethod: "kach",
+      format,
+    });
+  }
 
   return (
     <div>
       <PageHeader
         title="Impression"
-        subtitle="Thermique 58/80 mm et A4 · WiFi (iOS/Android) ou Bluetooth (Android uniquement)"
+        subtitle="Thermique 58/80 mm et A4 · via l'imprimante configurée sur votre téléphone ou ordinateur"
       />
 
       <div className="gb-card mb-4 flex items-start gap-3 border-l-4 border-l-kpi-orange p-4">
         <AlertTriangle className="mt-0.5 size-5 shrink-0 text-kpi-orange" />
         <div>
-          <p className="text-sm font-semibold">Avertissement iOS</p>
+          <p className="text-sm font-semibold">Konsènan koneksyon imprimant</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Sur iPhone et iPad, l'impression Bluetooth directe n'est pas prise en charge par le navigateur.
-            Utilisez une imprimante WiFi/réseau. Le Bluetooth reste disponible sur Android.
+            G-Boss enprime atravè bwat dyalòg enpresyon aparèy ou a (navigatè web la) — li pa detekte imprimant
+            otomatikman. Pou sa mache byen :
           </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+            <li>
+              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                <Wifi className="size-3.5" /> WiFi / rezo
+              </span>{" "}
+              — enstale imprimant lan kòm yon imprimant sistèm (iOS, Android, Windows oswa Mac) yon sèl fwa ; li ap
+              parèt nan lis la lè w klike "Imprimer".
+            </li>
+            <li>
+              <span className="inline-flex items-center gap-1 font-medium text-foreground">
+                <Bluetooth className="size-3.5" /> Bluetooth (Android sèlman)
+              </span>{" "}
+              — pase pa yon app enpresyon konpatib enstale sou telefòn nan (pa disponib sou iPhone/iPad).
+            </li>
+          </ul>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Panel title="Imprimantes configurées" className="lg:col-span-2">
-          <div className="space-y-3">
-            {PRINTERS.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-secondary">
-                  {p.conn === "wifi" ? <Wifi className="size-4" /> : <Bluetooth className="size-4" />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{p.name}</p>
-                  <p className="gb-num truncate text-xs text-muted-foreground">
-                    {p.conn === "wifi" ? "WiFi" : "Bluetooth (Android)"} · {p.ip}
-                  </p>
+        <Panel title="Dernier reçu" className="lg:col-span-2">
+          {receiptsQuery.isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Chargement...
+            </div>
+          ) : !lastReceipt ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Pa gen okenn resi ankò. Fè yon vant nan Kès/Vant oswa ajoute yon depans nan Kontabilite pou wè yon
+              aperçu isit la.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">{preview?.reference}</p>
+                  <p className="gb-num text-sm font-semibold">{money(preview?.amount ?? 0, biz.currency)}</p>
                 </div>
-                <StatusPill tone={p.ready ? "ok" : "low"}>{p.ready ? "Prête" : "Hors ligne"}</StatusPill>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    p.ready
-                      ? toast.success(`Test envoyé à ${p.name}`)
-                      : toast.error(`${p.name} est hors ligne`)
-                  }
-                >
-                  Test
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {lastReceipt.kind === "vant" ? "Vant" : "Depans"} · {preview?.client}
+                </p>
               </div>
-            ))}
-          </div>
-          <Button
-            size="sm"
-            className="mt-3"
-            onClick={() => toast.success("Recherche d'imprimantes lancée (démonstration)")}
-          >
-            <Printer className="size-4" /> Détecter une imprimante
-          </Button>
+              <Button size="sm" onClick={handlePrintLast} disabled={printing}>
+                {printing ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
+                Imprimer ce reçu
+              </Button>
+            </div>
+          )}
         </Panel>
 
-        <Panel title="Format & aperçu">
+        <Panel title="Format & test">
           <div className="space-y-2">
             {FORMATS.map((f) => (
               <button
                 key={f.id}
+                type="button"
                 onClick={() => setFormat(f.id)}
                 className={cn(
                   "w-full rounded-lg border p-3 text-left transition-colors",
@@ -113,30 +200,8 @@ function Printing() {
             ))}
           </div>
 
-          <div
-            className={cn(
-              "gb-num mx-auto mt-4 rounded-lg border border-dashed border-border bg-background p-3 text-[11px]",
-              format === "58" ? "max-w-[190px]" : format === "80" ? "max-w-[240px]" : "max-w-full",
-            )}
-          >
-            <p className="text-center font-display text-xs font-bold">{biz.name}</p>
-            <p className="text-center text-muted-foreground">Taxe {biz.taxRate}% · {biz.currency}</p>
-            <div className="my-2 border-t border-dashed border-border" />
-            <p>Facture {inv?.id ?? "—"}</p>
-            <p className="truncate">Client {inv?.client ?? "—"}</p>
-            <div className="my-2 border-t border-dashed border-border" />
-            <p className="flex justify-between font-semibold">
-              <span>TOTAL</span>
-              <span>{money(inv?.amount ?? 0, biz.currency)}</span>
-            </p>
-          </div>
-
-          <Button
-            size="sm"
-            className="mt-3 w-full"
-            onClick={() => toast.success(`Impression ${format === "a4" ? "A4" : `${format} mm`} envoyée`)}
-          >
-            Imprimer
+          <Button size="sm" variant="outline" className="mt-3 w-full" onClick={handleTestPrint}>
+            <Printer className="size-4" /> Imprimer une page de test
           </Button>
         </Panel>
       </div>

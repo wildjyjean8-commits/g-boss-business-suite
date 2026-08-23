@@ -1,5 +1,7 @@
 export type ReceiptLine = { name: string; qty: number; unitPrice: number };
 
+export type ReceiptFormat = "58" | "80" | "a4";
+
 export type PrintableReceipt = {
   businessName: string;
   reference: string | null;
@@ -12,6 +14,13 @@ export type PrintableReceipt = {
   total: number;
   currency: "HTG" | "USD";
   paymentMethod: string;
+  format?: ReceiptFormat;
+};
+
+const FORMAT_STYLE: Record<ReceiptFormat, { width: string; pageSize: string; base: string }> = {
+  "58": { width: "190px", pageSize: "58mm auto", base: "10px" },
+  "80": { width: "300px", pageSize: "80mm auto", base: "11px" },
+  a4: { width: "100%", pageSize: "A4", base: "13px" },
 };
 
 function fmt(n: number, currency: "HTG" | "USD") {
@@ -25,8 +34,16 @@ const PAYMENT_LABEL: Record<string, string> = {
 };
 
 export function printReceipt(r: PrintableReceipt) {
-  const win = window.open("", "_blank", "width=380,height=640");
-  if (!win) return;
+  const format = r.format ?? "80";
+  const style = FORMAT_STYLE[format];
+  const winWidth = format === "a4" ? 820 : 380;
+  const win = window.open("", "_blank", `width=${winWidth},height=720`);
+  if (!win) {
+    alert(
+      "Le navigateur a bloqué la fenêtre d'impression. Autorisez les pop-ups pour ce site, puis réessayez.",
+    );
+    return;
+  }
 
   const rows = r.lines
     .map(
@@ -47,8 +64,9 @@ export function printReceipt(r: PrintableReceipt) {
         <meta charset="utf-8" />
         <title>Reçu ${r.reference ?? ""}</title>
         <style>
+          @page { size: ${style.pageSize}; margin: ${format === "a4" ? "16mm" : "2mm"}; }
           * { box-sizing: border-box; }
-          body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; width: 300px; margin: 0 auto; padding: 16px; color: #0A0A14; }
+          body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; width: ${style.width}; max-width: 100%; margin: 0 auto; padding: 16px; color: #0A0A14; font-size: ${style.base}; }
           h1 { font-size: 16px; text-align: center; margin: 0 0 2px; }
           .sub { text-align: center; font-size: 11px; color: #555; margin: 0 0 12px; }
           .meta { font-size: 11px; margin-bottom: 10px; }
