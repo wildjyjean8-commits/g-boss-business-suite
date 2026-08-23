@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ClipboardList,
   FileText,
+  Loader2,
   Package,
   ShoppingCart,
   TrendingUp,
@@ -25,14 +27,12 @@ import { useBiz } from "@/components/gboss/biz-context";
 import { CHART_COLORS, KpiCard, Panel, PageHeader, ProgressBar, StatusPill } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/gboss/i18n";
-import {
-  invoiceMetrics,
-  money,
-  stockMetrics,
-  stockStatus,
-  taskMetrics,
-  weekMetrics,
-} from "@/lib/gboss/data";
+import { money } from "@/lib/gboss/data";
+import { fetchWeekChart } from "@/lib/gboss/dashboard";
+import { fetchInvoices, invoiceMetrics } from "@/lib/gboss/invoices";
+import { fetchMembers } from "@/lib/gboss/members";
+import { fetchProducts, productStockMetrics, productStockStatus } from "@/lib/gboss/products";
+import { fetchTasks, taskMetrics } from "@/lib/gboss/tasks";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({
@@ -52,11 +52,33 @@ export const Route = createFileRoute("/app/")({
 function Dashboard() {
   const { t } = useI18n();
   const { biz } = useBiz();
-  const w = weekMetrics(biz);
-  const s = stockMetrics(biz);
-  const inv = invoiceMetrics(biz);
-  const tk = taskMetrics(biz);
+
+  const weekQuery = useQuery({ queryKey: ["week-chart", biz.id], queryFn: () => fetchWeekChart(biz.id) });
+  const productsQuery = useQuery({ queryKey: ["products", biz.id], queryFn: () => fetchProducts(biz.id) });
+  const invoicesQuery = useQuery({ queryKey: ["invoices", biz.id], queryFn: () => fetchInvoices(biz.id) });
+  const tasksQuery = useQuery({ queryKey: ["tasks", biz.id], queryFn: () => fetchTasks(biz.id) });
+  const membersQuery = useQuery({ queryKey: ["members", biz.id], queryFn: () => fetchMembers(biz.id) });
+
+  const week = weekQuery.data ?? [];
+  const products = productsQuery.data ?? [];
+  const invoices = invoicesQuery.data ?? [];
+  const tasks = tasksQuery.data ?? [];
+  const members = membersQuery.data ?? [];
+
+  const w = {
+    revenue: week.reduce((s, d) => s + d.revenue, 0),
+    expense: week.reduce((s, d) => s + d.expense, 0),
+    orders: week.reduce((s, d) => s + d.orders, 0),
+  };
+  const profit = w.revenue - w.expense;
+  const s = productStockMetrics(products);
+  const inv = invoiceMetrics(invoices);
+  const tk = taskMetrics(tasks);
   const doneRate = Math.round((tk.done.length / Math.max(1, tk.total)) * 100);
+  const present = members.filter((e) => e.present).length;
+
+  const loading =
+    weekQuery.isLoading || productsQuery.isLoading || invoicesQuery.isLoading || tasksQuery.isLoading || membersQuery.isLoading;
 
   return (
     <div>
@@ -77,138 +99,158 @@ function Dashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard label={t("revenue")} value={money(w.revenue, biz.currency)} tone="green" delta="Semaine en cours" icon={<TrendingUp className="size-4" />} />
-        <KpiCard label={t("expenses")} value={money(w.expense, biz.currency)} tone="orange" icon={<Wallet className="size-4" />} />
-        <KpiCard label={t("profit")} value={money(w.profit, biz.currency)} tone="blue" hint={`${w.orders} commandes`} icon={<ShoppingCart className="size-4" />} />
-        <KpiCard label="Valeur du stock" value={money(s.value, biz.currency)} tone="purple" hint={`${s.total} produits`} icon={<Package className="size-4" />} />
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Panel title="Revenus vs dépenses (7 jours)" className="lg:col-span-2">
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={biz.week} margin={{ left: -18, right: 6, top: 6 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={11} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={11} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }} />
-                <Area type="monotone" dataKey="revenue" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.18} strokeWidth={2} />
-                <Area type="monotone" dataKey="expense" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
+      {loading ? (
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+          <Loader2 className="size-4 animate-spin" /> Chargement du tableau de bord...
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <KpiCard label={t("revenue")} value={money(w.revenue, biz.currency)} tone="green" delta="Semaine en cours" icon={<TrendingUp className="size-4" />} />
+            <KpiCard label={t("expenses")} value={money(w.expense, biz.currency)} tone="orange" icon={<Wallet className="size-4" />} />
+            <KpiCard label={t("profit")} value={money(profit, biz.currency)} tone="blue" hint={`${w.orders} commandes`} icon={<ShoppingCart className="size-4" />} />
+            <KpiCard label="Valeur du stock" value={money(s.value, biz.currency)} tone="purple" hint={`${s.total} produits`} icon={<Package className="size-4" />} />
           </div>
-        </Panel>
 
-        <Panel title="Stock par catégorie">
-          <div className="h-44 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={s.categories} dataKey="value" nameKey="name" innerRadius={38} outerRadius={64} paddingAngle={2}>
-                  {s.categories.map((c, i) => (
-                    <Cell key={c.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            <Panel title="Revenus vs dépenses (7 jours)" className="lg:col-span-2">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={week} margin={{ left: -18, right: 6, top: 6 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="day" stroke="var(--muted-foreground)" fontSize={11} />
+                    <YAxis stroke="var(--muted-foreground)" fontSize={11} />
+                    <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }} />
+                    <Area type="monotone" dataKey="revenue" stroke="var(--chart-1)" fill="var(--chart-1)" fillOpacity={0.18} strokeWidth={2} />
+                    <Area type="monotone" dataKey="expense" stroke="var(--chart-3)" fill="var(--chart-3)" fillOpacity={0.12} strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </Panel>
+
+            <Panel title="Stock par catégorie">
+              {s.categories.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">Aucun produit pour l'instant.</p>
+              ) : (
+                <>
+                  <div className="h-44 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={s.categories} dataKey="value" nameKey="name" innerRadius={38} outerRadius={64} paddingAngle={2}>
+                          {s.categories.map((c, i) => (
+                            <Cell key={c.name} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <ul className="mt-2 space-y-1.5">
+                    {s.categories.map((c, i) => (
+                      <li key={c.name} className="flex items-center gap-2 text-xs">
+                        <span className="size-2.5 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        <span className="flex-1 truncate text-muted-foreground">{c.name}</span>
+                        <span className="gb-num font-medium">{money(c.value, biz.currency)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </Panel>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+            <Panel
+              title="Alertes stock"
+              action={
+                <Link to="/app/estok" className="text-xs font-semibold text-accent">
+                  Voir tout
+                </Link>
+              }
+            >
+              {s.low.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucune alerte — tous les niveaux sont bons.</p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {s.low.map((p) => (
+                    <li key={p.id} className="flex items-center gap-2">
+                      <AlertTriangle className="size-4 shrink-0 text-kpi-orange" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{p.name}</span>
+                        <span className="gb-num text-xs text-muted-foreground">
+                          {p.stock} / min {p.min_stock}
+                        </span>
+                      </span>
+                      <StatusPill tone={productStockStatus(p)}>
+                        {productStockStatus(p) === "crit" ? "Critique" : "Bas"}
+                      </StatusPill>
+                    </li>
                   ))}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="mt-2 space-y-1.5">
-            {s.categories.map((c, i) => (
-              <li key={c.name} className="flex items-center gap-2 text-xs">
-                <span className="size-2.5 rounded-full" style={{ background: CHART_COLORS[i % CHART_COLORS.length] }} />
-                <span className="flex-1 truncate text-muted-foreground">{c.name}</span>
-                <span className="gb-num font-medium">{money(c.value, biz.currency)}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </div>
+                </ul>
+              )}
+            </Panel>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Panel
-          title="Alertes stock"
-          action={
-            <Link to="/app/estok" className="text-xs font-semibold text-accent">
-              Voir tout
-            </Link>
-          }
-        >
-          {s.low.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune alerte — tous les niveaux sont bons.</p>
-          ) : (
-            <ul className="space-y-2.5">
-              {s.low.map((p) => (
-                <li key={p.id} className="flex items-center gap-2">
-                  <AlertTriangle className="size-4 shrink-0 text-kpi-orange" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{p.name}</span>
-                    <span className="gb-num text-xs text-muted-foreground">
-                      {p.stock} / min {p.min}
-                    </span>
-                  </span>
-                  <StatusPill tone={stockStatus(p)}>{stockStatus(p) === "crit" ? "Critique" : "Bas"}</StatusPill>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+            <Panel
+              title="Factures récentes"
+              action={
+                <Link to="/app/faktirasyon" className="text-xs font-semibold text-accent">
+                  Voir tout
+                </Link>
+              }
+            >
+              {invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucune facture pour l'instant.</p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {invoices.slice(0, 4).map((i) => (
+                    <li key={i.id} className="flex items-center gap-2">
+                      <FileText className="size-4 shrink-0 text-kpi-blue" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{i.client}</span>
+                        <span className="gb-num text-xs text-muted-foreground">
+                          {i.reference} · {i.issue_date}
+                        </span>
+                      </span>
+                      <span className="gb-num text-sm font-semibold">{money(i.amount, biz.currency)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="gb-num mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
+                En attente : {money(inv.pending, biz.currency)} · Expiré : {money(inv.expired, biz.currency)}
+              </p>
+            </Panel>
 
-        <Panel
-          title="Factures récentes"
-          action={
-            <Link to="/app/faktirasyon" className="text-xs font-semibold text-accent">
-              Voir tout
-            </Link>
-          }
-        >
-          <ul className="space-y-2.5">
-            {biz.invoices.slice(0, 4).map((i) => (
-              <li key={i.id} className="flex items-center gap-2">
-                <FileText className="size-4 shrink-0 text-kpi-blue" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{i.client}</span>
-                  <span className="gb-num text-xs text-muted-foreground">
-                    {i.id} · {i.date}
-                  </span>
-                </span>
-                <span className="gb-num text-sm font-semibold">{money(i.amount, biz.currency)}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="gb-num mt-3 border-t border-border pt-3 text-xs text-muted-foreground">
-            En attente : {money(inv.pending, biz.currency)} · Expiré : {money(inv.expired, biz.currency)}
-          </p>
-        </Panel>
-
-        <Panel
-          title="Avancement des tâches"
-          action={
-            <Link to="/app/tach" className="text-xs font-semibold text-accent">
-              Kanban
-            </Link>
-          }
-        >
-          <div className="flex items-center gap-2 text-sm">
-            <ClipboardList className="size-4 text-kpi-purple" />
-            <span className="gb-num font-semibold">{doneRate}%</span>
-            <span className="text-muted-foreground">terminées</span>
+            <Panel
+              title="Avancement des tâches"
+              action={
+                <Link to="/app/tach" className="text-xs font-semibold text-accent">
+                  Kanban
+                </Link>
+              }
+            >
+              <div className="flex items-center gap-2 text-sm">
+                <ClipboardList className="size-4 text-kpi-purple" />
+                <span className="gb-num font-semibold">{doneRate}%</span>
+                <span className="text-muted-foreground">terminées</span>
+              </div>
+              <div className="mt-2">
+                <ProgressBar value={doneRate} tone="purple" />
+              </div>
+              <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                <li>À faire : {tk.todo.length}</li>
+                <li>En cours : {tk.doing.length}</li>
+                <li>Bloquées : {tk.blocked.length}</li>
+                <li>Non assignées : {tk.unassigned}</li>
+              </ul>
+              <div className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
+                <Users className="size-4 text-kpi-green" />
+                {present} / {members.length} présents aujourd'hui
+              </div>
+            </Panel>
           </div>
-          <div className="mt-2">
-            <ProgressBar value={doneRate} tone="purple" />
-          </div>
-          <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-            <li>À faire : {tk.todo.length}</li>
-            <li>En cours : {tk.doing.length}</li>
-            <li>Bloquées : {tk.blocked.length}</li>
-            <li>Non assignées : {tk.unassigned}</li>
-          </ul>
-          <div className="mt-3 flex items-center gap-2 border-t border-border pt-3 text-xs text-muted-foreground">
-            <Users className="size-4 text-kpi-green" />
-            {biz.employees.filter((e) => e.present).length} / {biz.employees.length} présents aujourd'hui
-          </div>
-        </Panel>
-      </div>
+        </>
+      )}
     </div>
   );
 }

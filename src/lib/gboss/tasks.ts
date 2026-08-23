@@ -46,12 +46,13 @@ export async function deleteTask(id: string): Promise<void> {
 }
 
 export function taskMetrics(tasks: TaskRow[]) {
+  const todo = tasks.filter((t) => t.status === "afe");
   const doing = tasks.filter((t) => t.status === "ankou");
   const blocked = tasks.filter((t) => t.status === "bloke");
   const review = tasks.filter((t) => t.status === "revizyon");
   const done = tasks.filter((t) => t.status === "fini");
   const unassigned = tasks.filter((t) => !t.assignee_id).length;
-  return { total: tasks.length, doing, blocked, review, done, unassigned };
+  return { total: tasks.length, todo, doing, blocked, review, done, unassigned };
 }
 
 const STATUS_PROGRESS: Record<TaskStatus, number> = {
