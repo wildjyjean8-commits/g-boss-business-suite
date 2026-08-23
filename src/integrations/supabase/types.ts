@@ -378,6 +378,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ledger_accounts: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          type: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          type: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          type?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       moncash_transactions: {
         Row: {
           id: string
@@ -420,6 +447,54 @@ export type Database = {
           raw_response?: Json | null
           created_at?: string
           confirmed_at?: string | null
+        }
+        Relationships: []
+      }
+      receipts: {
+        Row: {
+          id: string
+          business_id: string
+          kind: string
+          reference: string
+          party: string | null
+          account_id: string | null
+          amount: number
+          receipt_date: string
+          file_url: string | null
+          source: string
+          source_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          kind: string
+          reference: string
+          party?: string | null
+          account_id?: string | null
+          amount?: number
+          receipt_date?: string
+          file_url?: string | null
+          source?: string
+          source_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          kind?: string
+          reference?: string
+          party?: string | null
+          account_id?: string | null
+          amount?: number
+          receipt_date?: string
+          file_url?: string | null
+          source?: string
+          source_id?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Relationships: []
       }

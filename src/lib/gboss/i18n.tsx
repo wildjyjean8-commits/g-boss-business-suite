@@ -17,6 +17,7 @@ const DICT: Dict = {
   invoicing: ["Facturation", "Faktirasyon", "Invoicing", "Facturación"],
   stock: ["Stock / Market", "Estòk / Market", "Stock / Market", "Inventario"],
   reports: ["Rapports", "Rapò", "Reports", "Informes"],
+  accounting: ["Comptabilité", "Kontabilite", "Accounting", "Contabilidad"],
   suppliers: ["Fournisseurs", "Founisè", "Suppliers", "Proveedores"],
   team: ["Équipe", "Ekip", "Team", "Equipo"],
   tasks: ["Tâches", "Tach", "Tasks", "Tareas"],
