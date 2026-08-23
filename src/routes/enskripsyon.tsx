@@ -670,7 +670,7 @@ function ChoiceCard({
     >
       {image ? (
         <div className="relative">
-          <img src={image} alt="" className="aspect-[16/10] w-full object-cover object-top" />
+          <img src={image} alt="" className="aspect-[3/2] w-full object-cover object-center" />
           {active ? (
             <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-kpi-green text-white shadow-[var(--shadow-pop)]">
               <Check className="size-4" />
