@@ -4,6 +4,7 @@ import { GBossLogoDark } from "@/components/gboss/logo";
 import { LangSwitcher } from "@/components/gboss/lang-switcher";
 import { Button } from "@/components/ui/button";
 import { PLANS, HOTEL_ADDON_PRICE, TRIAL_DAYS } from "@/lib/gboss/data";
+import heroDashboard from "@/assets/hero-dashboard.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -51,23 +52,38 @@ function Landing() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 pt-10 pb-14">
-        <p className="gb-label">Plateforme privée · PWA installable</p>
-        <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-bold text-foreground sm:text-5xl">
-          Gérez tout votre business dans <span className="gb-gradient-text">une seule</span> plateforme.
-        </h1>
-        <p className="mt-4 max-w-2xl text-base text-muted-foreground">
-          G-Boss ne vend rien à vos clients : elle organise vos données, votre stock, votre équipe,
-          vos factures et vos rapports. {TRIAL_DAYS} jours d'essai gratuit, mode offline, 4 langues.
-        </p>
-        <div className="mt-7 flex flex-wrap gap-3">
-          <Button asChild size="lg">
-            <Link to="/enskripsyon">
-              Commencer l'essai gratuit <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link to="/app">Voir la démo du dashboard</Link>
-          </Button>
+        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
+          <div>
+            <p className="gb-label">Plateforme privée · PWA installable</p>
+            <h1 className="mt-3 text-4xl leading-tight font-bold text-foreground sm:text-5xl">
+              Gérez tout votre business dans <span className="gb-gradient-text">une seule</span> plateforme.
+            </h1>
+            <p className="mt-4 max-w-xl text-base text-muted-foreground">
+              G-Boss ne vend rien à vos clients : elle organise vos données, votre stock, votre équipe,
+              vos factures et vos rapports. {TRIAL_DAYS} jours d'essai gratuit, mode offline, 4 langues.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button asChild size="lg">
+                <Link to="/enskripsyon">
+                  Commencer l'essai gratuit <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link to="/app">Voir la démo du dashboard</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute -inset-4 -z-10 rounded-[2rem] bg-[image:var(--gradient-brand)] opacity-20 blur-2xl" />
+            <img
+              src={heroDashboard}
+              alt="Équipe consultant le tableau de bord G-Boss : ventes, stock, tâches et rapports en temps réel"
+              className="w-full rounded-2xl border border-border shadow-[var(--shadow-pop)]"
+              width={1166}
+              height={836}
+            />
+          </div>
         </div>
       </section>
 

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { GBossLogo } from "@/components/gboss/logo";
 import { LangSwitcher } from "@/components/gboss/lang-switcher";
+import signupBiznis from "@/assets/signup-biznis.png";
+import signupInstitisyon from "@/assets/signup-institisyon.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -356,6 +358,7 @@ function SignupPage() {
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <ChoiceCard
+                    image={signupBiznis}
                     icon={<Store className="size-5" />}
                     title="Biznis"
                     text="Entreprise, boutique, restaurant, service."
@@ -363,6 +366,7 @@ function SignupPage() {
                     onClick={() => setAccountType("biznis")}
                   />
                   <ChoiceCard
+                    image={signupInstitisyon}
                     icon={<GraduationCap className="size-5" />}
                     title="Institisyon"
                     text="École primaire, secondaire, université, formation."
@@ -643,12 +647,14 @@ function SignupPage() {
 
 function ChoiceCard({
   icon,
+  image,
   title,
   text,
   active,
   onClick,
 }: {
   icon?: React.ReactNode;
+  image?: string;
   title: string;
   text: string;
   active: boolean;
@@ -658,16 +664,28 @@ function ChoiceCard({
     <button
       onClick={onClick}
       className={cn(
-        "gb-card p-4 text-left transition-all",
+        "gb-card overflow-hidden text-left transition-all",
         active ? "ring-2 ring-primary" : "hover:border-primary/40",
       )}
     >
-      <div className="flex items-center gap-2">
-        {icon ? <span className="text-primary">{icon}</span> : null}
-        <span className="font-display font-semibold">{title}</span>
-        {active ? <Check className="ml-auto size-4 text-kpi-green" /> : null}
+      {image ? (
+        <div className="relative">
+          <img src={image} alt="" className="aspect-[16/10] w-full object-cover object-top" />
+          {active ? (
+            <span className="absolute top-2.5 right-2.5 grid size-7 place-items-center rounded-full bg-kpi-green text-white shadow-[var(--shadow-pop)]">
+              <Check className="size-4" />
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="p-4">
+        <div className="flex items-center gap-2">
+          {icon ? <span className="text-primary">{icon}</span> : null}
+          <span className="font-display font-semibold">{title}</span>
+          {active && !image ? <Check className="ml-auto size-4 text-kpi-green" /> : null}
+        </div>
+        <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
       </div>
-      <p className="mt-1.5 text-sm text-muted-foreground">{text}</p>
     </button>
   );
 }

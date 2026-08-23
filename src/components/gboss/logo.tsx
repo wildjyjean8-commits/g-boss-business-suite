@@ -1,45 +1,22 @@
+import gbossLogoFull from "@/assets/gboss-logo-full.png";
+import gbossIcon from "@/assets/gboss-icon.png";
+
+/**
+ * Logo G-Boss — utilisé sur fond sombre (sidebar navy) et fond clair (header,
+ * pages publiques). Le PNG contient déjà le badge + le wordmark "G-BOSS",
+ * donc un seul asset couvre les deux contextes.
+ */
 export function GBossLogo({ compact = false }: { compact?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span
-        className="grid size-9 shrink-0 place-items-center rounded-xl font-display text-lg font-bold text-[#00113c]"
-        style={{ backgroundImage: "var(--gradient-gold)" }}
-        aria-hidden
-      >
-        G
-      </span>
-      {compact ? null : (
-        <span className="leading-tight">
-          <span className="block font-display text-base font-bold tracking-tight text-white">
-            G-BOSS
-          </span>
-          <span className="block text-[10px] font-medium text-gold">
-            Gérer. Organiser. Développer.
-          </span>
-        </span>
-      )}
-    </div>
-  );
+  if (compact) {
+    return <img src={gbossIcon} alt="G-Boss" className="h-9 w-auto shrink-0" />;
+  }
+  return <img src={gbossLogoFull} alt="G-Boss — Gérer. Organiser. Développer." className="h-16 w-auto shrink-0" />;
 }
 
 export function GBossLogoDark() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span
-        className="grid size-10 shrink-0 place-items-center rounded-xl font-display text-xl font-bold text-[#00113c]"
-        style={{ backgroundImage: "var(--gradient-gold)" }}
-        aria-hidden
-      >
-        G
-      </span>
-      <span className="leading-tight">
-        <span className="gb-gradient-text block font-display text-lg font-bold tracking-tight">
-          G-BOSS
-        </span>
-        <span className="block text-[10px] font-medium text-muted-foreground">
-          Gérer. Organiser. Développer.
-        </span>
-      </span>
-    </div>
-  );
+  return <img src={gbossLogoFull} alt="G-Boss — Gérer. Organiser. Développer." className="h-14 w-auto shrink-0" />;
+}
+
+export function GBossIcon({ className = "h-9 w-9" }: { className?: string }) {
+  return <img src={gbossIcon} alt="G-Boss" className={className} />;
 }
