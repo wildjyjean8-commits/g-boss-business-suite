@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bluetooth, Loader2, Printer, Wifi } from "lucide-react";
+import { AlertTriangle, Bluetooth, Download, FileImage, Loader2, Printer, Wifi } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -7,9 +7,15 @@ import { useBiz } from "@/components/gboss/biz-context";
 import { PageHeader, Panel } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { money } from "@/lib/gboss/data";
-import { fetchReceipts } from "@/lib/gboss/accounting";
+import { fetchReceipts, type ReceiptRow } from "@/lib/gboss/accounting";
 import { fetchSaleReceiptDetails } from "@/lib/gboss/pos";
-import { printReceipt, type ReceiptFormat } from "@/lib/gboss/print-receipt";
+import {
+  downloadReceiptJpeg,
+  downloadReceiptPdf,
+  printReceipt,
+  type PrintableReceipt,
+  type ReceiptFormat,
+} from "@/lib/gboss/print-receipt";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/enpresyon")({
@@ -18,10 +24,11 @@ export const Route = createFileRoute("/app/enpresyon")({
       { title: "Impression — G-Boss" },
       {
         name: "description",
-        content: "Imprimez reçus thermiques 58/80 mm et factures A4 via l'imprimante système de votre appareil.",
+        content:
+          "Imprimez ou téléchargez (PDF/JPEG) vos reçus thermiques 58/80 mm et factures A4, avec logo et infos entreprise.",
       },
       { property: "og:title", content: "Impression — G-Boss" },
-      { property: "og:description", content: "Aperçu et impression réelle des reçus de votre business." },
+      { property: "og:description", content: "Aperçu, impression et téléchargement réels des reçus de votre business." },
     ],
   }),
   component: Printing,
@@ -36,7 +43,7 @@ const FORMATS: { id: ReceiptFormat; label: string; desc: string }[] = [
 function Printing() {
   const { biz } = useBiz();
   const [format, setFormat] = useState<ReceiptFormat>("80");
-  const [printing, setPrinting] = useState(false);
+  const [busy, setBusy] = useState<"print" | "pdf" | "jpeg" | null>(null);
 
   const receiptsQuery = useQuery({
     queryKey: ["receipts", biz.id],
@@ -54,51 +61,92 @@ function Printing() {
     };
   }, [lastReceipt]);
 
+  async function buildReceiptPayload(r: ReceiptRow): Promise<PrintableReceipt> {
+    const base = {
+      businessName: biz.name,
+      reference: r.reference,
+      currency: biz.currency,
+      format,
+      logoUrl: biz.logoUrl,
+      legalName: biz.legalName,
+      address: biz.address,
+      phone: biz.phone,
+      email: biz.email,
+      taxNumber: biz.taxNumber,
+    };
+
+    if (r.source === "vant" && r.source_id) {
+      const { sale, lines } = await fetchSaleReceiptDetails(r.source_id);
+      return {
+        ...base,
+        date: new Date(sale.occurred_at).toLocaleString("fr-FR"),
+        client: r.party,
+        lines,
+        subtotal: sale.subtotal,
+        tax: sale.tax_amount,
+        taxRate: biz.taxRate,
+        total: sale.total,
+        paymentMethod: sale.payment_method ?? "kach",
+      };
+    }
+
+    // Resi manyèl oswa ki soti nan yon fakti — pa gen detay atik pa atik,
+    // n'ap itilize yon sèl liy ak montan total la.
+    return {
+      ...base,
+      date: new Date(r.receipt_date).toLocaleDateString("fr-FR"),
+      client: r.party,
+      lines: [{ name: r.kind === "vant" ? "Vant" : "Depans", qty: 1, unitPrice: r.amount }],
+      subtotal: r.amount,
+      tax: 0,
+      taxRate: 0,
+      total: r.amount,
+      paymentMethod: "kach",
+    };
+  }
+
   async function handlePrintLast() {
     if (!lastReceipt) {
       toast.error("Pa gen okenn resi pou enprime pou kounye a");
       return;
     }
-    setPrinting(true);
+    setBusy("print");
     try {
-      if (lastReceipt.source === "vant" && lastReceipt.source_id) {
-        const { sale, lines } = await fetchSaleReceiptDetails(lastReceipt.source_id);
-        printReceipt({
-          businessName: biz.name,
-          reference: lastReceipt.reference,
-          date: new Date(sale.occurred_at).toLocaleString("fr-FR"),
-          client: lastReceipt.party,
-          lines,
-          subtotal: sale.subtotal,
-          tax: sale.tax_amount,
-          taxRate: biz.taxRate,
-          total: sale.total,
-          currency: biz.currency,
-          paymentMethod: sale.payment_method ?? "kach",
-          format,
-        });
-      } else {
-        // Resi manyèl oswa ki soti nan yon fakti — pa gen detay atik pa atik,
-        // n'ap enprime yon sèl liy ak montan total la.
-        printReceipt({
-          businessName: biz.name,
-          reference: lastReceipt.reference,
-          date: new Date(lastReceipt.receipt_date).toLocaleDateString("fr-FR"),
-          client: lastReceipt.party,
-          lines: [{ name: lastReceipt.kind === "vant" ? "Vant" : "Depans", qty: 1, unitPrice: lastReceipt.amount }],
-          subtotal: lastReceipt.amount,
-          tax: 0,
-          taxRate: 0,
-          total: lastReceipt.amount,
-          currency: biz.currency,
-          paymentMethod: "kach",
-          format,
-        });
-      }
+      printReceipt(await buildReceiptPayload(lastReceipt));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur pandan chajman resi a");
     } finally {
-      setPrinting(false);
+      setBusy(null);
+    }
+  }
+
+  async function handleDownloadPdf() {
+    if (!lastReceipt) {
+      toast.error("Pa gen okenn resi pou telechaje pou kounye a");
+      return;
+    }
+    setBusy("pdf");
+    try {
+      await downloadReceiptPdf(await buildReceiptPayload(lastReceipt));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan jenerasyon PDF la");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleDownloadJpeg() {
+    if (!lastReceipt) {
+      toast.error("Pa gen okenn resi pou telechaje pou kounye a");
+      return;
+    }
+    setBusy("jpeg");
+    try {
+      await downloadReceiptJpeg(await buildReceiptPayload(lastReceipt));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan jenerasyon imaj la");
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -116,6 +164,12 @@ function Printing() {
       currency: biz.currency,
       paymentMethod: "kach",
       format,
+      logoUrl: biz.logoUrl,
+      legalName: biz.legalName,
+      address: biz.address,
+      phone: biz.phone,
+      email: biz.email,
+      taxNumber: biz.taxNumber,
     });
   }
 
@@ -123,15 +177,27 @@ function Printing() {
     <div>
       <PageHeader
         title="Impression"
-        subtitle="Thermique 58/80 mm et A4 · via l'imprimante configurée sur votre téléphone ou ordinateur"
+        subtitle="Thermique 58/80 mm et A4 · impression réelle, PDF et JPEG avec logo et infos entreprise"
       />
+
+      {!biz.logoUrl && !biz.address && !biz.phone ? (
+        <div className="gb-card mb-4 flex items-start gap-3 border-l-4 border-l-accent p-4">
+          <div>
+            <p className="text-sm font-semibold">Ajoute les infos de ton entreprise</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Va dans Paramètres → Infos entreprise pour ajouter ton logo, adresse et téléphone. Ils apparaîtront
+              automatiquement sur tes reçus imprimés et téléchargés.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="gb-card mb-4 flex items-start gap-3 border-l-4 border-l-kpi-orange p-4">
         <AlertTriangle className="mt-0.5 size-5 shrink-0 text-kpi-orange" />
         <div>
           <p className="text-sm font-semibold">Konsènan koneksyon imprimant</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            G-Boss enprime atravè bwat dyalòg enpresyon aparèy ou a (navigatè web la) — li pa detekte imprimant
+            Pou enprime sou papye, G-Boss pase pa bwat dyalòg enpresyon aparèy ou a — li pa detekte imprimant
             otomatikman. Pou sa mache byen :
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
@@ -149,6 +215,9 @@ function Printing() {
               — pase pa yon app enpresyon konpatib enstale sou telefòn nan (pa disponib sou iPhone/iPad).
             </li>
           </ul>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ou pa gen imprimant sou men w? Telechaje resi a an PDF oswa JPEG epi voye l sou WhatsApp.
+          </p>
         </div>
       </div>
 
@@ -174,10 +243,20 @@ function Printing() {
                   {lastReceipt.kind === "vant" ? "Vant" : "Depans"} · {preview?.client}
                 </p>
               </div>
-              <Button size="sm" onClick={handlePrintLast} disabled={printing}>
-                {printing ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
-                Imprimer ce reçu
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={handlePrintLast} disabled={busy !== null}>
+                  {busy === "print" ? <Loader2 className="size-4 animate-spin" /> : <Printer className="size-4" />}
+                  Imprimer
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleDownloadPdf} disabled={busy !== null}>
+                  {busy === "pdf" ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+                  Télécharger PDF
+                </Button>
+                <Button size="sm" variant="outline" onClick={handleDownloadJpeg} disabled={busy !== null}>
+                  {busy === "jpeg" ? <Loader2 className="size-4 animate-spin" /> : <FileImage className="size-4" />}
+                  Télécharger JPEG
+                </Button>
+              </div>
             </div>
           )}
         </Panel>

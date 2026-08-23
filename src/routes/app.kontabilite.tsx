@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileImage, Loader2, Plus, Printer, Receipt as ReceiptIcon, Search, Trash2 } from "lucide-react";
+import { Download, FileImage, Loader2, Plus, Printer, Receipt as ReceiptIcon, Search, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/dialog";
 import { money } from "@/lib/gboss/data";
 import { fetchSaleReceiptDetails } from "@/lib/gboss/pos";
-import { printReceipt } from "@/lib/gboss/print-receipt";
+import { downloadReceiptPdf, printReceipt } from "@/lib/gboss/print-receipt";
 import {
   accountBreakdown,
   createAccount,
@@ -120,15 +120,25 @@ function Accounting() {
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ReceiptRow | null>(null);
   const [reprintingId, setReprintingId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  async function handleReprint(r: ReceiptRow) {
-    if (!r.source_id) return;
-    setReprintingId(r.id);
-    try {
+  async function buildReceiptPayload(r: ReceiptRow) {
+    const base = {
+      businessName: biz.name,
+      reference: r.reference,
+      currency: biz.currency,
+      logoUrl: biz.logoUrl,
+      legalName: biz.legalName,
+      address: biz.address,
+      phone: biz.phone,
+      email: biz.email,
+      taxNumber: biz.taxNumber,
+    };
+
+    if (r.source === "vant" && r.source_id) {
       const { sale, lines } = await fetchSaleReceiptDetails(r.source_id);
-      printReceipt({
-        businessName: biz.name,
-        reference: r.reference,
+      return {
+        ...base,
         date: new Date(sale.occurred_at).toLocaleString("fr-FR"),
         client: r.party,
         lines,
@@ -136,13 +146,42 @@ function Accounting() {
         tax: sale.tax_amount,
         taxRate: biz.taxRate,
         total: sale.total,
-        currency: biz.currency,
         paymentMethod: sale.payment_method ?? "kach",
-      });
+      };
+    }
+
+    return {
+      ...base,
+      date: new Date(r.receipt_date).toLocaleDateString("fr-FR"),
+      client: r.party,
+      lines: [{ name: r.kind === "vant" ? "Vant" : "Depans", qty: 1, unitPrice: r.amount }],
+      subtotal: r.amount,
+      tax: 0,
+      taxRate: 0,
+      total: r.amount,
+      paymentMethod: "kach",
+    };
+  }
+
+  async function handleReprint(r: ReceiptRow) {
+    setReprintingId(r.id);
+    try {
+      printReceipt(await buildReceiptPayload(r));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur pandan chajman resi a");
     } finally {
       setReprintingId(null);
+    }
+  }
+
+  async function handleDownloadPdf(r: ReceiptRow) {
+    setDownloadingId(r.id);
+    try {
+      await downloadReceiptPdf(await buildReceiptPayload(r));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan jenerasyon PDF la");
+    } finally {
+      setDownloadingId(null);
     }
   }
 
@@ -439,20 +478,32 @@ function Accounting() {
                         <td className="gb-num py-2.5 text-right font-semibold">{money(r.amount, biz.currency)}</td>
                         <td className="py-2.5 pl-2 text-right">
                           <div className="flex justify-end gap-1">
-                            {r.source === "vant" && r.source_id ? (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                disabled={reprintingId === r.id}
-                                onClick={() => handleReprint(r)}
-                              >
-                                {reprintingId === r.id ? (
-                                  <Loader2 className="size-4 animate-spin" />
-                                ) : (
-                                  <Printer className="size-4" />
-                                )}
-                              </Button>
-                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Imprimer"
+                              disabled={reprintingId === r.id}
+                              onClick={() => handleReprint(r)}
+                            >
+                              {reprintingId === r.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <Printer className="size-4" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Télécharger PDF"
+                              disabled={downloadingId === r.id}
+                              onClick={() => handleDownloadPdf(r)}
+                            >
+                              {downloadingId === r.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <Download className="size-4" />
+                              )}
+                            </Button>
                             <Button
                               variant="ghost"
                               size="icon"

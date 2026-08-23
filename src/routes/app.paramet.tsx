@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Building2, Coins, Globe, Loader2, Percent, Plus, Receipt, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { Building2, Coins, Globe, ImageUp, Loader2, Percent, Plus, Receipt, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Panel, KpiCard, StatusPill } from "@/components/gboss/ui";
 import { useBiz } from "@/components/gboss/biz-context";
@@ -16,7 +16,7 @@ import {
   planPrice,
   type PlanId,
 } from "@/lib/gboss/data";
-import { updateBusinessSettings } from "@/lib/gboss/business-settings";
+import { updateBusinessSettings, updateBusinessProfile, uploadBusinessLogo } from "@/lib/gboss/business-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,16 @@ function Settings() {
   const [students, setStudents] = useState(String(biz.students.length || 0));
   const [saving, setSaving] = useState(false);
 
+  const [legalName, setLegalName] = useState(biz.legalName ?? "");
+  const [address, setAddress] = useState(biz.address ?? "");
+  const [phone, setPhone] = useState(biz.phone ?? "");
+  const [email, setEmail] = useState(biz.email ?? "");
+  const [taxNumber, setTaxNumber] = useState(biz.taxNumber ?? "");
+  const [logoUrl, setLogoUrl] = useState(biz.logoUrl);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const studentCount = Number(students) || 0;
   const total = planPrice(plan, businesses.length, hotelAddon, studentCount);
   const base = plan === "kanpis" ? PLANS.kanpis.price * studentCount : PLANS[plan].price;
@@ -78,6 +88,46 @@ function Settings() {
       toast.error(err instanceof Error ? err.message : "Erreur pandan anrejistreman an");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    try {
+      await updateBusinessProfile(biz.id, {
+        legal_name: legalName.trim() || null,
+        address: address.trim() || null,
+        phone: phone.trim() || null,
+        email: email.trim() || null,
+        tax_number: taxNumber.trim() || null,
+      });
+      await refreshBusinesses();
+      toast.success("Infos entreprise enregistrées");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan anrejistreman an");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo la twò gwo (maksimòm 2 Mo)");
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const url = await uploadBusinessLogo(biz.id, file);
+      setLogoUrl(url);
+      await refreshBusinesses();
+      toast.success("Logo mete ajou");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan upload logo a");
+    } finally {
+      setUploadingLogo(false);
+      if (logoInputRef.current) logoInputRef.current.value = "";
     }
   }
 
@@ -142,6 +192,71 @@ function Settings() {
               · taxe appliquée {Number(taxRate) || 0}% ={" "}
               <span className="gb-num">{money(1000 * (1 + (Number(taxRate) || 0) / 100), "HTG")}</span>
             </p>
+          </div>
+        </Panel>
+
+        <Panel
+          title="Infos entreprise"
+          className="lg:col-span-2"
+          action={
+            <Button size="sm" variant="outline" onClick={handleSaveProfile} disabled={savingProfile}>
+              {savingProfile ? <Loader2 className="size-4 animate-spin" /> : null}
+              Enregistrer
+            </Button>
+          }
+        >
+          <p className="mb-3 text-xs text-muted-foreground">
+            Ces infos apparaissent sur vos reçus et factures imprimés (logo, adresse, téléphone, NIF).
+          </p>
+          <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="flex shrink-0 flex-col items-center gap-2">
+              <div className="grid size-20 place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-secondary">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="size-full object-contain" />
+                ) : (
+                  <ImageUp className="size-6 text-muted-foreground" />
+                )}
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={uploadingLogo}
+              >
+                {uploadingLogo ? <Loader2 className="size-3.5 animate-spin" /> : null}
+                {logoUrl ? "Changer" : "Ajouter un logo"}
+              </Button>
+            </div>
+            <div className="grid flex-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label htmlFor="legalName" className="gb-label">Nom légal (optionnel)</Label>
+                <Input id="legalName" className="mt-2" value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder={biz.name} />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="address" className="gb-label">Adresse</Label>
+                <Input id="address" className="mt-2" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Ri, katye, vil" />
+              </div>
+              <div>
+                <Label htmlFor="phone" className="gb-label">Téléphone</Label>
+                <Input id="phone" className="mt-2" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+509 ..." />
+              </div>
+              <div>
+                <Label htmlFor="bizEmail" className="gb-label">Email</Label>
+                <Input id="bizEmail" className="mt-2" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="kontak@biznis.com" />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="taxNumber" className="gb-label">NIF / Numéro fiscal</Label>
+                <Input id="taxNumber" className="mt-2" value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} />
+              </div>
+            </div>
           </div>
         </Panel>
 

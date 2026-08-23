@@ -99,6 +99,12 @@ function Pos() {
         total: result.total,
         currency: biz.currency,
         paymentMethod,
+        logoUrl: biz.logoUrl,
+        legalName: biz.legalName,
+        address: biz.address,
+        phone: biz.phone,
+        email: biz.email,
+        taxNumber: biz.taxNumber,
       });
       setCart({});
       setClientName("");

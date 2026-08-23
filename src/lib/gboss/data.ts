@@ -148,6 +148,12 @@ export type Business = {
   hotelAddon: boolean;
   schoolAddon: boolean;
   taxRate: number;
+  legalName: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  taxNumber: string | null;
+  logoUrl: string | null;
   products: Product[];
   invoices: Invoice[];
   tasks: Task[];
@@ -182,6 +188,12 @@ export const BUSINESSES: Business[] = [
     hotelAddon: true,
     schoolAddon: false,
     taxRate: 10,
+    legalName: null,
+    address: null,
+    phone: null,
+    email: null,
+    taxNumber: null,
+    logoUrl: null,
     products: [
       { id: "p1", sku: "RST-0001", name: "Griyo pòsyon", category: "Nourriture", price: 750, cost: 420, stock: 42, min: 15, supplier: "Distribisyon Nò", sold: 186 },
       { id: "p2", sku: "RST-0002", name: "Diri kole", category: "Nourriture", price: 350, cost: 180, stock: 12, min: 20, supplier: "Distribisyon Nò", sold: 240 },
@@ -237,6 +249,12 @@ export const BUSINESSES: Business[] = [
     hotelAddon: false,
     schoolAddon: false,
     taxRate: 0,
+    legalName: null,
+    address: null,
+    phone: null,
+    email: null,
+    taxNumber: null,
+    logoUrl: null,
     products: [
       { id: "c1", sku: "CST-0001", name: "Sak siman", category: "Matériaux de base", price: 620, cost: 540, stock: 240, min: 100, supplier: "Sima Ayiti", sold: 1200 },
       { id: "c2", sku: "CST-0002", name: "Blòk 8", category: "Matériaux de base", price: 95, cost: 72, stock: 60, min: 150, supplier: "Blòk Delmas", sold: 3400 },
