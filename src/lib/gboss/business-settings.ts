@@ -7,6 +7,8 @@ export type BusinessSettingsInput = {
   tax_rate: number;
   plan: PlanId;
   hotel_addon: boolean;
+  pos_enabled: boolean;
+  stock_enabled: boolean;
 };
 
 export async function updateBusinessSettings(businessId: string, input: BusinessSettingsInput): Promise<void> {

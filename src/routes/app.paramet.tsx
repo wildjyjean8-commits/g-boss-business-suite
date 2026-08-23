@@ -51,6 +51,8 @@ function Settings() {
   const [taxRate, setTaxRate] = useState(String(biz.taxRate));
   const [plan, setPlan] = useState<PlanId>(biz.plan);
   const [hotelAddon, setHotelAddon] = useState(biz.hotelAddon);
+  const [posEnabled, setPosEnabled] = useState(biz.posEnabled);
+  const [stockEnabled, setStockEnabled] = useState(biz.stockEnabled);
   const [students, setStudents] = useState(String(biz.students.length || 0));
   const [saving, setSaving] = useState(false);
 
@@ -67,6 +69,8 @@ function Settings() {
         tax_rate: Number(taxRate) || 0,
         plan,
         hotel_addon: hotelAddon,
+        pos_enabled: posEnabled,
+        stock_enabled: stockEnabled,
       });
       await refreshBusinesses();
       toast.success("Paramètres enregistrés");
@@ -166,6 +170,25 @@ function Settings() {
           <p className="mt-3 text-xs text-muted-foreground">
             La langue s'applique immédiatement à toute la navigation.
           </p>
+        </Panel>
+
+        <Panel title="Modules activés">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Kès / Vant (point de vente)</p>
+                <p className="text-xs text-muted-foreground">Encaisser et donner un reçu au client</p>
+              </div>
+              <Switch checked={posEnabled} onCheckedChange={setPosEnabled} />
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Stock / Inventaire détaillé</p>
+                <p className="text-xs text-muted-foreground">Suivi SKU, alertes de stock minimum</p>
+              </div>
+              <Switch checked={stockEnabled} onCheckedChange={setStockEnabled} />
+            </div>
+          </div>
         </Panel>
 
         <Panel title="Plan & add-ons">
