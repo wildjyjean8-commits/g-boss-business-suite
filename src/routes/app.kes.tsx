@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
 import { KpiCard, PageHeader, Panel } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ import {
 import { money } from "@/lib/gboss/data";
 import { fetchProducts } from "@/lib/gboss/products";
 import { completeSale, fetchWeekSales, type CartLine } from "@/lib/gboss/pos";
+import { printReceipt } from "@/lib/gboss/print-receipt";
 
 export const Route = createFileRoute("/app/kes")({
   head: () => ({
@@ -50,6 +52,7 @@ function Pos() {
 
   const [cart, setCart] = useState<Record<string, number>>({});
   const [paymentMethod, setPaymentMethod] = useState("kach");
+  const [clientName, setClientName] = useState("");
 
   const lines = useMemo(
     () =>
@@ -79,13 +82,29 @@ function Pos() {
         unitPrice: l.product.price,
         qty: l.qty,
       }));
-      await completeSale(biz.id, cartLines, biz.taxRate, paymentMethod);
+      const result = await completeSale(biz.id, cartLines, biz.taxRate, paymentMethod, clientName);
+      return { result, cartLines };
     },
-    onSuccess: () => {
+    onSuccess: ({ result, cartLines }) => {
       toast.success("Vente encaissée");
+      printReceipt({
+        businessName: biz.name,
+        reference: result.reference,
+        date: new Date(result.occurredAt).toLocaleString("fr-FR"),
+        client: clientName.trim() || null,
+        lines: cartLines.map((l) => ({ name: l.name, qty: l.qty, unitPrice: l.unitPrice })),
+        subtotal: result.subtotal,
+        tax: result.taxAmount,
+        taxRate: biz.taxRate,
+        total: result.total,
+        currency: biz.currency,
+        paymentMethod,
+      });
       setCart({});
+      setClientName("");
       queryClient.invalidateQueries({ queryKey: ["products", biz.id] });
       queryClient.invalidateQueries({ queryKey: ["week-sales", biz.id] });
+      queryClient.invalidateQueries({ queryKey: ["receipts", biz.id] });
     },
     onError: (err: Error) => toast.error(err.message || "Erreur pandan ankesman an"),
   });
@@ -191,7 +210,12 @@ function Pos() {
             </p>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-3 space-y-2">
+            <Input
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Non kliyan an (opsyonèl)"
+            />
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
               <SelectTrigger>
                 <SelectValue />

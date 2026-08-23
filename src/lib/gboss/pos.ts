@@ -56,12 +56,48 @@ export async function fetchTopProducts(businessId: string, limit = 5): Promise<T
     .slice(0, limit);
 }
 
+export async function fetchSaleReceiptDetails(saleId: string) {
+  const { data: sale, error: saleError } = await supabase.from("sales").select("*").eq("id", saleId).single();
+  if (saleError) throw saleError;
+
+  const { data: items, error: itemsError } = await supabase
+    .from("sale_items")
+    .select("product_id, quantity, unit_price")
+    .eq("sale_id", saleId);
+  if (itemsError) throw itemsError;
+
+  const productIds = Array.from(new Set((items ?? []).map((i) => i.product_id).filter((id): id is string => !!id)));
+  const namesById = new Map<string, string>();
+  if (productIds.length > 0) {
+    const { data: products } = await supabase.from("products").select("id, name").in("id", productIds);
+    for (const p of products ?? []) namesById.set(p.id, p.name);
+  }
+
+  return {
+    sale,
+    lines: (items ?? []).map((i) => ({
+      name: (i.product_id && namesById.get(i.product_id)) ?? "Produit",
+      qty: i.quantity,
+      unitPrice: i.unit_price,
+    })),
+  };
+}
+export type CompletedSale = {
+  saleId: string;
+  reference: string | null;
+  occurredAt: string;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+};
+
 export async function completeSale(
   businessId: string,
   lines: CartLine[],
   taxRate: number,
   paymentMethod: string,
-): Promise<void> {
+  clientName?: string | null,
+): Promise<CompletedSale> {
   const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   const taxAmount = subtotal * (taxRate / 100);
   const total = subtotal + taxAmount;
@@ -75,7 +111,7 @@ export async function completeSale(
       tax_amount: taxAmount,
       total,
     })
-    .select("id")
+    .select("id, occurred_at")
     .single();
 
   if (saleError) throw saleError;
@@ -90,4 +126,24 @@ export async function completeSale(
   );
 
   if (itemsError) throw itemsError;
+
+  // Yon resi kreye otomatikman pa yon trigger SQL lè vant lan antre (etap anwo
+  // a). Nou al chèche l pou n gen referans lan, epi nou mete non kliyan an si
+  // itilizatè a antre l.
+  let reference: string | null = null;
+  const { data: receipt } = await supabase
+    .from("receipts")
+    .select("id, reference")
+    .eq("source", "vant")
+    .eq("source_id", sale.id)
+    .maybeSingle();
+
+  if (receipt) {
+    reference = receipt.reference;
+    if (clientName && clientName.trim()) {
+      await supabase.from("receipts").update({ party: clientName.trim() }).eq("id", receipt.id);
+    }
+  }
+
+  return { saleId: sale.id, reference, occurredAt: sale.occurred_at, subtotal, taxAmount, total };
 }

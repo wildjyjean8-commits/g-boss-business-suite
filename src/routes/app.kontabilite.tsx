@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileImage, Loader2, Plus, Receipt as ReceiptIcon, Search, Trash2 } from "lucide-react";
+import { FileImage, Loader2, Plus, Printer, Receipt as ReceiptIcon, Search, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -45,6 +45,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { money } from "@/lib/gboss/data";
+import { fetchSaleReceiptDetails } from "@/lib/gboss/pos";
+import { printReceipt } from "@/lib/gboss/print-receipt";
 import {
   accountBreakdown,
   createAccount,
@@ -117,6 +119,32 @@ function Accounting() {
   const [receiptForm, setReceiptForm] = useState<ReceiptInput>(EMPTY_RECEIPT);
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ReceiptRow | null>(null);
+  const [reprintingId, setReprintingId] = useState<string | null>(null);
+
+  async function handleReprint(r: ReceiptRow) {
+    if (!r.source_id) return;
+    setReprintingId(r.id);
+    try {
+      const { sale, lines } = await fetchSaleReceiptDetails(r.source_id);
+      printReceipt({
+        businessName: biz.name,
+        reference: r.reference,
+        date: new Date(sale.occurred_at).toLocaleString("fr-FR"),
+        client: r.party,
+        lines,
+        subtotal: sale.subtotal,
+        tax: sale.tax_amount,
+        taxRate: biz.taxRate,
+        total: sale.total,
+        currency: biz.currency,
+        paymentMethod: sale.payment_method ?? "kach",
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan chajman resi a");
+    } finally {
+      setReprintingId(null);
+    }
+  }
 
   const createAccountMutation = useMutation({
     mutationFn: async () => {
@@ -410,14 +438,30 @@ function Accounting() {
                         </td>
                         <td className="gb-num py-2.5 text-right font-semibold">{money(r.amount, biz.currency)}</td>
                         <td className="py-2.5 pl-2 text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => setDeleteTarget(r)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            {r.source === "vant" && r.source_id ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                disabled={reprintingId === r.id}
+                                onClick={() => handleReprint(r)}
+                              >
+                                {reprintingId === r.id ? (
+                                  <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                  <Printer className="size-4" />
+                                )}
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setDeleteTarget(r)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
