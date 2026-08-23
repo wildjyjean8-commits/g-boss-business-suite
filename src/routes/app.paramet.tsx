@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, Coins, Globe, Percent, Plus, Receipt, Sparkles } from "lucide-react";
+import { Building2, Coins, Globe, Loader2, Percent, Plus, Receipt, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { PageHeader, Panel, KpiCard, StatusPill } from "@/components/gboss/ui";
 import { useBiz } from "@/components/gboss/biz-context";
 import { useI18n } from "@/lib/gboss/i18n";
@@ -15,6 +16,7 @@ import {
   planPrice,
   type PlanId,
 } from "@/lib/gboss/data";
+import { updateBusinessSettings } from "@/lib/gboss/business-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +43,7 @@ export const Route = createFileRoute("/app/paramet")({
 });
 
 function Settings() {
-  const { biz, businesses } = useBiz();
+  const { biz, businesses, refreshBusinesses } = useBiz();
   const { lang, setLang, t } = useI18n();
 
   const [currency, setCurrency] = useState<"HTG" | "USD">(biz.currency);
@@ -50,17 +52,42 @@ function Settings() {
   const [plan, setPlan] = useState<PlanId>(biz.plan);
   const [hotelAddon, setHotelAddon] = useState(biz.hotelAddon);
   const [students, setStudents] = useState(String(biz.students.length || 0));
+  const [saving, setSaving] = useState(false);
 
   const studentCount = Number(students) || 0;
   const total = planPrice(plan, businesses.length, hotelAddon, studentCount);
   const base = plan === "kanpis" ? PLANS.kanpis.price * studentCount : PLANS[plan].price;
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateBusinessSettings(biz.id, {
+        currency,
+        exchange_rate: Number(rate) || biz.rate,
+        tax_rate: Number(taxRate) || 0,
+        plan,
+        hotel_addon: hotelAddon,
+      });
+      await refreshBusinesses();
+      toast.success("Paramètres enregistrés");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erreur pandan anrejistreman an");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div>
       <PageHeader
         title={t("settings")}
         subtitle={`${biz.name} · ${biz.sector}`}
-        actions={<Button className="gap-2"><Sparkles className="size-4" /> Enregistrer</Button>}
+        actions={
+          <Button className="gap-2" onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+            Enregistrer
+          </Button>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -9,6 +9,7 @@ type Ctx = {
   biz: Business;
   bizId: string;
   setBizId: (id: string) => void;
+  refreshBusinesses: () => Promise<void>;
 };
 
 const BizContext = createContext<Ctx | null>(null);
@@ -19,28 +20,28 @@ export function BizProvider({ children }: { children: ReactNode }) {
   const [bizId, setBizId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
+  async function load(active: () => boolean) {
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user;
+    const owned = user ? await ensureOwnedBusiness(user.id, user) : [];
+
+    if (!active()) return;
+
+    if (owned.length === 0) {
+      // Pa gen okenn done fiktif nan repli — si vrèman pa gen biznis mare ak
+      // kont lan (menm apre tantativ rekiperasyon otomatik), voye itilizatè a
+      // fini enskripsyon an olye montre chif envante.
+      setFailed(true);
+      return;
+    }
+
+    setBusinesses(owned);
+    setBizId((prev) => (prev && owned.some((b) => b.id === prev) ? prev : owned[0]!.id));
+  }
+
   useEffect(() => {
     let active = true;
-
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const user = data.session?.user;
-      const owned = user ? await ensureOwnedBusiness(user.id, user) : [];
-
-      if (!active) return;
-
-      if (owned.length === 0) {
-        // Pa gen okenn done fiktif nan repli — si vrèman pa gen biznis mare ak
-        // kont lan (menm apre tantativ rekiperasyon otomatik), voye itilizatè a
-        // fini enskripsyon an olye montre chif envante.
-        setFailed(true);
-        return;
-      }
-
-      setBusinesses(owned);
-      setBizId(owned[0]!.id);
-    })();
-
+    load(() => active);
     return () => {
       active = false;
     };
@@ -53,6 +54,7 @@ export function BizProvider({ children }: { children: ReactNode }) {
       biz: businesses.find((b) => b.id === bizId) ?? businesses[0]!,
       bizId,
       setBizId,
+      refreshBusinesses: () => load(() => true),
     };
   }, [businesses, bizId]);
 
