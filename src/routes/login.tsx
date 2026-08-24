@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Apple, KeyRound, Loader2, Mail } from "lucide-react";
 import { GBossLogoDark } from "@/components/gboss/logo";
 import { LangSwitcher } from "@/components/gboss/lang-switcher";
+import loginPanel from "@/assets/login-panel.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,20 +78,16 @@ function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1fr_460px]">
-      <aside className="relative hidden flex-col justify-between bg-sidebar p-10 lg:flex">
-        <div className="flex items-center justify-between">
-          <span className="font-display text-lg font-bold text-white">G-BOSS</span>
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-sidebar lg:flex">
+        <img
+          src={loginPanel}
+          alt="G-Boss — Gérer. Organiser. Développer. Tableau de bord intelligent, gestion de stock, gestion d'équipe, rapports et analyses."
+          className="absolute inset-0 size-full object-cover"
+        />
+        <div className="relative flex justify-end p-6">
           <LangSwitcher variant="dark" />
         </div>
-        <div>
-          <h2 className="max-w-md font-display text-3xl font-bold text-white">
-            Gérer. Organiser. Développer.
-          </h2>
-          <p className="mt-3 max-w-md text-sm text-sidebar-foreground/70">
-            Une seule connexion pour vos business, votre équipe, votre stock et vos rapports.
-          </p>
-        </div>
-        <p className="text-xs text-sidebar-foreground/50">
+        <p className="relative px-10 pb-8 text-xs text-sidebar-foreground/60">
           Sessions Super-Admin : déconnexion automatique après 30 min d'inactivité.
         </p>
       </aside>
