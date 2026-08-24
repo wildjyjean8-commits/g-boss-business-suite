@@ -2,9 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Apple, KeyRound, Loader2, Mail } from "lucide-react";
+import { Apple, Eye, EyeOff, KeyRound, Lock, Loader2, ShieldCheck } from "lucide-react";
 import { GBossLogoDark } from "@/components/gboss/logo";
 import { LangSwitcher } from "@/components/gboss/lang-switcher";
+import { Checkbox } from "@/components/ui/checkbox";
 import loginPanel from "@/assets/login-panel.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,10 @@ function LoginPage() {
   const { redirect: redirectTo } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   async function submitCredentials(e: React.FormEvent) {
     e.preventDefault();
@@ -76,13 +80,30 @@ function LoginPage() {
     navigate({ to: redirectTo && redirectTo.startsWith("/app") ? redirectTo : "/app" });
   }
 
+  async function handleForgotPassword() {
+    if (!email.includes("@")) {
+      toast.error("Antre email ou anvan");
+      return;
+    }
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/login`,
+    });
+    setSendingReset(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Yon lyen reyinisyalizasyon voye nan email ou");
+  }
+
   return (
     <div className="grid min-h-screen lg:grid-cols-[1fr_460px]">
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-sidebar lg:flex">
+      <aside className="relative hidden flex-col justify-between overflow-hidden bg-[#02040e] lg:flex">
         <img
           src={loginPanel}
           alt="G-Boss — Gérer. Organiser. Développer. Tableau de bord intelligent, gestion de stock, gestion d'équipe, rapports et analyses."
-          className="absolute inset-0 size-full object-cover"
+          className="absolute inset-0 size-full object-contain object-center"
         />
         <div className="relative flex justify-end p-6">
           <LangSwitcher variant="dark" />
@@ -100,7 +121,10 @@ function LoginPage() {
 
           <form onSubmit={submitCredentials} className="mt-8 space-y-4">
             <div>
-              <h1 className="font-display text-2xl font-bold">Connexion</h1>
+              <span className="grid size-11 place-items-center rounded-xl bg-card text-primary shadow-[var(--shadow-card)]">
+                <Lock className="size-5" />
+              </span>
+              <h1 className="mt-3 font-display text-2xl font-bold">Connexion</h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 Un seul formulaire pour tous les comptes.
               </p>
@@ -119,13 +143,39 @@ function LoginPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Mot de passe</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Cache mo de pas la" : "Montre mo de pas la"}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-muted-foreground">
+                <Checkbox checked={rememberMe} onCheckedChange={(v) => setRememberMe(v === true)} />
+                Se souvenir de moi
+              </label>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={sendingReset}
+                className="font-medium text-primary hover:underline disabled:opacity-50"
+              >
+                {sendingReset ? "Voye..." : "Mot de passe oublié ?"}
+              </button>
             </div>
 
             <Button type="submit" className="w-full" disabled={busy}>
@@ -157,7 +207,7 @@ function LoginPage() {
                   if (error) toast.error(error.message);
                 }}
               >
-                <Mail className="size-4" /> Continuer avec Google
+                <GoogleIcon className="size-4" /> Continuer avec Google
               </Button>
             </div>
 
@@ -167,9 +217,37 @@ function LoginPage() {
                 Inscription
               </Link>
             </p>
+
+            <p className="flex items-center justify-center gap-1.5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+              <ShieldCheck className="size-3.5 shrink-0" />
+              Vos données sont protégées avec un chiffrement de niveau entreprise.
+            </p>
           </form>
         </div>
       </main>
     </div>
+  );
+}
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden>
+      <path
+        fill="#FFC107"
+        d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 12.9 4.5 4 13.4 4 24.5S12.9 44.5 24 44.5c11.4 0 21-8.2 21-20.5 0-1.2-.1-2.4-.4-3.5Z"
+      />
+      <path
+        fill="#FF3D00"
+        d="m6.3 14.7 6.6 4.8C14.6 15.9 18.9 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.6 0-14.2 4.3-17.7 10.2Z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24 44.5c5.1 0 9.8-2 13.3-5.1l-6.2-5.2c-2 1.4-4.5 2.3-7.1 2.3-5.3 0-9.7-2.6-11.3-7l-6.5 5c3.4 6.7 10.4 10 17.8 10Z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.6 20.5H42V20H24v8h11.3c-.9 2.5-2.6 4.6-4.9 6l.1-.1 6.2 5.2c-.4.4 6.7-4.9 6.7-15.1 0-1.2-.1-2.4-.4-3.5Z"
+      />
+    </svg>
   );
 }
