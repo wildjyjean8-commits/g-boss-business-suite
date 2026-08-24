@@ -100,7 +100,7 @@ function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-[1fr_460px]">
       <aside className="relative hidden flex-col justify-between bg-sidebar p-10 lg:flex">
         <div className="flex items-center justify-between">
-          <span className="font-display text-lg font-bold text-white">G-BOSS</span>
+          <GBossLogoDark />
           <LangSwitcher variant="dark" />
         </div>
         <div>
