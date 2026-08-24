@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Building2,
   Check,
@@ -21,6 +21,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { GBossLogo } from "./logo";
 import { LangSwitcher } from "./lang-switcher";
+import { KycStatusBadge, VerifiedBadge } from "./kyc-badge";
 import { useBiz } from "./biz-context";
 import { useI18n } from "@/lib/gboss/i18n";
 import { PLANS } from "@/lib/gboss/data";
@@ -116,13 +117,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 function BizSwitcher() {
   const { businesses, biz, setBizId } = useBiz();
+  const navigate = useNavigate();
   return (
     <div className="px-3">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="flex w-full items-center justify-between gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2.5 text-left text-sm text-white">
             <span className="min-w-0">
-              <span className="block truncate font-semibold">{biz.name}</span>
+              <span className="flex items-center gap-1 truncate font-semibold">
+                <span className="truncate">{biz.name}</span>
+                {biz.kycStatus === "approved" ? <VerifiedBadge /> : null}
+              </span>
               <span className="block truncate text-[10px] text-sidebar-foreground/60">
                 {biz.sector}
               </span>
@@ -173,6 +178,7 @@ function UserMenu() {
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const { biz } = useBiz();
+  const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -195,7 +201,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Sheet>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-sm font-semibold">{biz.name}</p>
+            <p className="flex items-center gap-1.5 truncate font-display text-sm font-semibold">
+              <span className="truncate">{biz.name}</span>
+              <KycStatusBadge status={biz.kycStatus} onClick={() => navigate({ to: "/app/paramet" })} />
+            </p>
             <p className="gb-num truncate text-[11px] text-muted-foreground">
               {biz.currency} · 1 USD = {biz.rate} HTG · taxe {biz.taxRate}%
             </p>

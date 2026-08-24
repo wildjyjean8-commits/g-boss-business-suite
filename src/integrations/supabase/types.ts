@@ -35,6 +35,7 @@ export type Database = {
           email: string | null
           tax_number: string | null
           logo_url: string | null
+          kyc_status: string
           created_at: string
           updated_at: string
         }
@@ -60,6 +61,7 @@ export type Database = {
           email?: string | null
           tax_number?: string | null
           logo_url?: string | null
+          kyc_status?: string
           created_at?: string
           updated_at?: string
         }
@@ -85,10 +87,61 @@ export type Database = {
           email?: string | null
           tax_number?: string | null
           logo_url?: string | null
+          kyc_status?: string
           created_at?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      business_kyc_submissions: {
+        Row: {
+          id: string
+          business_id: string
+          id_document_url: string
+          selfie_url: string
+          document_type: string
+          status: string
+          rejection_reason: string | null
+          submitted_by: string
+          submitted_at: string
+          reviewed_by: string | null
+          reviewed_at: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          id_document_url: string
+          selfie_url: string
+          document_type?: string
+          status?: string
+          rejection_reason?: string | null
+          submitted_by: string
+          submitted_at?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          id_document_url?: string
+          selfie_url?: string
+          document_type?: string
+          status?: string
+          rejection_reason?: string | null
+          submitted_by?: string
+          submitted_at?: string
+          reviewed_by?: string | null
+          reviewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_kyc_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_members: {
         Row: {

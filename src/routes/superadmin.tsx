@@ -1,13 +1,17 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft,
   Building2,
+  Check,
   DollarSign,
   GraduationCap,
+  ShieldCheck,
   TrendingUp,
   Users,
+  X,
 } from "lucide-react";
 import {
   Area,
@@ -32,6 +36,12 @@ import {
 } from "@/lib/gboss/data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import {
+  fetchPendingKycSubmissions,
+  getKycDocumentSignedUrls,
+  reviewKycSubmission,
+  type PendingKycSubmission,
+} from "@/lib/gboss/kyc";
 
 export const Route = createFileRoute("/superadmin")({
   beforeLoad: async ({ location }) => {
@@ -87,6 +97,103 @@ const STATUS_LABEL = {
   restreint: "Restreint",
   annule: "Annulé",
 } as const;
+
+function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
+  const [pending, setPending] = useState<PendingKycSubmission[]>([]);
+  const [urls, setUrls] = useState<Record<string, { id: string | null; selfie: string | null }>>({});
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const rows = await fetchPendingKycSubmissions();
+    setPending(rows);
+    setLoading(false);
+
+    for (const sub of rows) {
+      const signed = await getKycDocumentSignedUrls(sub.idDocumentUrl, sub.selfieUrl);
+      setUrls((prev) => ({ ...prev, [sub.id]: signed }));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function decide(id: string, status: "approved" | "rejected") {
+    const reason = status === "rejected" ? window.prompt("Rezon rejè a:") : undefined;
+    if (status === "rejected" && !reason) return;
+
+    setBusyId(id);
+    try {
+      await reviewKycSubmission(id, reviewerId, status, reason ?? undefined);
+      toast.success(status === "approved" ? "Biznis la verifye" : "Demand rejte");
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erè pandan revizyon an");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <Panel
+      className="mt-4"
+      title="Demand KYC an atant"
+      action={<StatusPill tone={pending.length > 0 ? "low" : "neutral"}>{pending.length} an atant</StatusPill>}
+    >
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Chajman...</p>
+      ) : pending.length === 0 ? (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <ShieldCheck className="size-4" /> Okenn demand an atant kounye a.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {pending.map((sub) => (
+            <div key={sub.id} className="rounded-lg border border-border p-3">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold">{sub.businessName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {sub.documentType.toUpperCase()} · soumèt {new Date(sub.submittedAt).toLocaleDateString("fr-HT")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-kpi-green text-white hover:bg-kpi-green/90"
+                    disabled={busyId === sub.id}
+                    onClick={() => decide(sub.id, "approved")}
+                  >
+                    <Check className="size-3.5" /> Apwouve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-kpi-red text-kpi-red hover:bg-status-crit"
+                    disabled={busyId === sub.id}
+                    onClick={() => decide(sub.id, "rejected")}
+                  >
+                    <X className="size-3.5" /> Rejte
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {urls[sub.id]?.id ? (
+                  <img src={urls[sub.id]!.id!} alt="Dokiman idantite" className="h-28 w-40 rounded-lg border border-border object-cover" />
+                ) : null}
+                {urls[sub.id]?.selfie ? (
+                  <img src={urls[sub.id]!.selfie!} alt="Selfie" className="h-28 w-40 rounded-lg border border-border object-cover" />
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
 
 function SuperAdmin() {
   const { session } = Route.useRouteContext();
@@ -294,6 +401,8 @@ function SuperAdmin() {
             {metrics.late.length} compte(s) en retard de paiement · restriction automatique après échéance.
           </p>
         </Panel>
+
+        <KycReviewPanel reviewerId={session.user.id} />
       </main>
     </div>
   );

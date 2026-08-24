@@ -50,6 +50,7 @@ export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> 
     email: row.email,
     taxNumber: row.tax_number,
     logoUrl: row.logo_url,
+    kycStatus: (row.kyc_status ?? "not_submitted") as Business["kycStatus"],
     products: [],
     invoices: [],
     tasks: [],

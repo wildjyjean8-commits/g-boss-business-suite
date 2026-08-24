@@ -1,10 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
-import { Building2, Coins, Globe, ImageUp, Loader2, Percent, Plus, Receipt, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import {
+  AlertTriangle,
+  Building2,
+  Coins,
+  FileCheck2,
+  Globe,
+  ImageUp,
+  Loader2,
+  Percent,
+  Plus,
+  Receipt,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader, Panel, KpiCard, StatusPill } from "@/components/gboss/ui";
+import { VerifiedBadge } from "@/components/gboss/kyc-badge";
 import { useBiz } from "@/components/gboss/biz-context";
+import { useSession } from "@/lib/gboss/use-session";
 import { useI18n } from "@/lib/gboss/i18n";
+import {
+  fetchLatestKycSubmission,
+  submitKyc,
+  type KycDocumentType,
+  type KycSubmission,
+} from "@/lib/gboss/kyc";
 import {
   HOTEL_ADDON_PRICE,
   MAX_BUSINESSES,
@@ -41,6 +61,135 @@ export const Route = createFileRoute("/app/paramet")({
   }),
   component: Settings,
 });
+
+function KycPanel() {
+  const { biz, refreshBusinesses } = useBiz();
+  const { session } = useSession();
+  const [submission, setSubmission] = useState<KycSubmission | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [docType, setDocType] = useState<KycDocumentType>("cin");
+  const [idFile, setIdFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchLatestKycSubmission(biz.id).then((s) => {
+      if (active) {
+        setSubmission(s);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [biz.id]);
+
+  async function handleSubmit() {
+    if (!idFile || !selfieFile || !session) return;
+    setSubmitting(true);
+    try {
+      await submitKyc(biz.id, session.user.id, docType, idFile, selfieFile);
+      const latest = await fetchLatestKycSubmission(biz.id);
+      setSubmission(latest);
+      await refreshBusinesses();
+      toast.success("Demand KYC ou a soumèt — n ap revize l talè");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erè pandan soumisyon KYC la");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const canSubmit = !loading && (!submission || submission.status === "rejected");
+
+  return (
+    <Panel title="Verifikasyon KYC" className="lg:col-span-2">
+      {biz.kycStatus === "approved" ? (
+        <div className="flex items-center gap-2 rounded-lg bg-status-ok p-3 text-sm font-medium text-kpi-green">
+          <VerifiedBadge />
+          Biznis ou verifye — mèsi!
+        </div>
+      ) : (
+        <>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Soumèt kat idantite ou (CIN oswa Paspò) ansanm ak yon selfie pou verifye biznis ou. Sa ajoute yon
+            "check" verifikasyon devan non biznis ou. Pa gen okenn blokaj aksè pandan w ap tann revizyon an.
+          </p>
+
+          {submission && submission.status !== "not_submitted" ? (
+            <div
+              className={cn(
+                "mb-3 flex items-center gap-2 rounded-lg p-3 text-sm font-medium",
+                submission.status === "pending" && "bg-kpi-blue/10 text-kpi-blue",
+                submission.status === "rejected" && "bg-status-crit text-kpi-red",
+              )}
+            >
+              {submission.status === "pending" ? <FileCheck2 className="size-4 shrink-0" /> : <AlertTriangle className="size-4 shrink-0" />}
+              {submission.status === "pending"
+                ? "Demand ou an atant revizyon Super-Admin."
+                : `Demand rejte : ${submission.rejectionReason ?? "okenn rezon bay"} — ou ka soumèt ankò.`}
+            </div>
+          ) : null}
+
+          {canSubmit ? (
+            <div className="space-y-3">
+              <div>
+                <Label className="gb-label">Tip dokiman</Label>
+                <div className="mt-2 flex gap-2">
+                  {([
+                    { id: "cin", label: "Kat Idantite (CIN)" },
+                    { id: "paspò", label: "Paspò" },
+                  ] as const).map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => setDocType(d.id)}
+                      className={cn(
+                        "flex-1 rounded-lg border px-3 py-2 text-sm font-semibold transition-colors",
+                        docType === d.id
+                          ? "border-accent bg-accent text-accent-foreground"
+                          : "border-border bg-card text-muted-foreground hover:border-accent/50",
+                      )}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="kycIdDoc" className="gb-label">Foto dokiman idantite</Label>
+                  <Input
+                    id="kycIdDoc"
+                    type="file"
+                    accept="image/*"
+                    className="mt-2"
+                    onChange={(e) => setIdFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="kycSelfie" className="gb-label">Selfie</Label>
+                  <Input
+                    id="kycSelfie"
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    className="mt-2"
+                    onChange={(e) => setSelfieFile(e.target.files?.[0] ?? null)}
+                  />
+                </div>
+              </div>
+              <Button onClick={handleSubmit} disabled={!idFile || !selfieFile || submitting} className="gap-2">
+                {submitting ? <Loader2 className="size-4 animate-spin" /> : <FileCheck2 className="size-4" />}
+                Soumèt pou verifikasyon
+              </Button>
+            </div>
+          ) : null}
+        </>
+      )}
+    </Panel>
+  );
+}
 
 function Settings() {
   const { biz, businesses, refreshBusinesses } = useBiz();
@@ -259,6 +408,8 @@ function Settings() {
             </div>
           </div>
         </Panel>
+
+        <KycPanel />
 
         <Panel title="Langue de l'interface">
           <div className="grid grid-cols-2 gap-2">
