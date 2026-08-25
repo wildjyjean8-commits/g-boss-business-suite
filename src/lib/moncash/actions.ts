@@ -51,11 +51,17 @@ async function computeSubscriptionAmount(
   return Math.round(multi + (biz.hotel_addon ? HOTEL_ADDON_PRICE : 0));
 }
 
+function siteUrl(): string {
+  const url = process.env["SITE_URL"];
+  if (!url) throw new Error("Manke varyab anviwònman SITE_URL (konfigire l sou Netlify).");
+  return url.replace(/\/$/, "");
+}
+
 export const createSubscriptionPayment = createServerFn({ method: "POST" })
   .validator((data: AuthedInput & { businessId: string }) => data)
   .handler(async ({ data }) => {
     const { supabaseAdmin, biz } = await requireOwnedBusiness(data.businessId, data.accessToken);
-    const { createMoncashPayment } = await import("./client.server");
+    const { createMccPayment } = await import("@/lib/moncashconnect/client.server");
 
     const amount = await computeSubscriptionAmount(supabaseAdmin, biz);
     if (amount <= 0) {
@@ -74,16 +80,62 @@ export const createSubscriptionPayment = createServerFn({ method: "POST" })
     });
     if (insertError) throw new Error(`Echèk anrejistreman tranzaksyon: ${insertError.message}`);
 
-    const payment = await createMoncashPayment(orderId, amount);
+    const returnUrl = `${siteUrl()}/moncash-return?orderId=${encodeURIComponent(orderId)}`;
+    const payment = await createMccPayment(orderId, amount, returnUrl);
 
-    return { orderId, amount, redirectUrl: payment.redirectUrl };
+    return { orderId, amount, redirectUrl: payment.paymentUrl };
   });
+
+/**
+ * Aplike yon peman konplete sou biznis lan + tranzaksyon an.
+ * Itilize ni pa confirmSubscriptionPayment (retounen kliyan) ni pa webhook la —
+ * idempotan: si tranzaksyon an deja "completed", pa fè anyen de plis.
+ */
+export async function applyMccPaymentResult(
+  supabaseAdmin: typeof SupabaseAdminType,
+  orderId: string,
+  outcome: { status: "completed" | "failed"; amount: number; failureReason?: string | null },
+) {
+  const { data: txRow } = await supabaseAdmin
+    .from("moncash_transactions")
+    .select("*")
+    .eq("order_id", orderId)
+    .single();
+
+  if (!txRow) return null;
+  if (txRow.status === "completed") return txRow; // deja aplike — idempotan
+
+  await supabaseAdmin
+    .from("moncash_transactions")
+    .update({
+      status: outcome.status,
+      raw_response: JSON.parse(JSON.stringify(outcome)),
+      confirmed_at: new Date().toISOString(),
+    })
+    .eq("order_id", orderId);
+
+  if (outcome.status === "completed" && txRow.business_id) {
+    const paidUntil = new Date();
+    paidUntil.setMonth(paidUntil.getMonth() + 1);
+
+    await supabaseAdmin
+      .from("businesses")
+      .update({
+        status: "actif",
+        paid_on_time: true,
+        subscription_paid_until: paidUntil.toISOString(),
+      })
+      .eq("id", txRow.business_id);
+  }
+
+  return txRow;
+}
 
 export const confirmSubscriptionPayment = createServerFn({ method: "POST" })
   .validator((data: { orderId: string }) => data)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { retrieveMoncashOrderPayment } = await import("./client.server");
+    const { getMccPaymentStatus } = await import("@/lib/moncashconnect/client.server");
 
     const { data: txRow, error: txError } = await supabaseAdmin
       .from("moncash_transactions")
@@ -99,41 +151,19 @@ export const confirmSubscriptionPayment = createServerFn({ method: "POST" })
       return { status: "completed" as const, amount: txRow.amount };
     }
 
-    const payment = await retrieveMoncashOrderPayment(data.orderId);
+    // Peman MonCashConnect konfime pa webhook — men n ap tcheke /pay-status
+    // la a tou kòm sekou (kliyan an ka tounen anvan webhook la rive).
+    const payment = await getMccPaymentStatus(data.orderId);
 
-    if (!payment) {
+    if (!payment || payment.status === "pending") {
       return { status: "pending" as const };
     }
 
-    const isSuccess = payment.message?.toLowerCase() === "successful";
+    await applyMccPaymentResult(supabaseAdmin, data.orderId, {
+      status: payment.status,
+      amount: payment.amount,
+      failureReason: payment.failureReason,
+    });
 
-    await supabaseAdmin
-      .from("moncash_transactions")
-      .update({
-        status: isSuccess ? "completed" : "failed",
-        moncash_transaction_id: payment.transactionId,
-        reference_id: payment.reference,
-        raw_response: JSON.parse(JSON.stringify(payment)),
-        confirmed_at: new Date().toISOString(),
-      })
-      .eq("order_id", data.orderId);
-
-    if (isSuccess && txRow.business_id) {
-      const paidUntil = new Date();
-      paidUntil.setMonth(paidUntil.getMonth() + 1);
-
-      await supabaseAdmin
-        .from("businesses")
-        .update({
-          status: "actif",
-          paid_on_time: true,
-          subscription_paid_until: paidUntil.toISOString(),
-        })
-        .eq("id", txRow.business_id);
-    }
-
-    return {
-      status: isSuccess ? ("completed" as const) : ("failed" as const),
-      amount: txRow.amount,
-    };
+    return { status: payment.status, amount: txRow.amount };
   });

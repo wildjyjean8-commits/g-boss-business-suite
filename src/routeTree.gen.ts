@@ -15,6 +15,7 @@ import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MoncashReturnRouteImport } from './routes/moncash-return'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
+import { Route as ApiMoncashWebhookRouteImport } from './routes/api.moncash-webhook'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppEkipRouteImport } from './routes/app.ekip'
 import { Route as AppEnpresyonRouteImport } from './routes/app.enpresyon'
@@ -57,6 +58,11 @@ const MoncashReturnRoute = MoncashReturnRouteImport.update({
 const SuperadminRoute = SuperadminRouteImport.update({
   id: '/superadmin',
   path: '/superadmin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMoncashWebhookRoute = ApiMoncashWebhookRouteImport.update({
+  id: '/api/moncash-webhook',
+  path: '/api/moncash-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
+  '/api/moncash-webhook': typeof ApiMoncashWebhookRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
+  '/api/moncash-webhook': typeof ApiMoncashWebhookRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
+  '/api/moncash-webhook': typeof ApiMoncashWebhookRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
   '/app/enstitisyon': typeof AppEnstitisyonRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/moncash-return'
     | '/superadmin'
+    | '/api/moncash-webhook'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/moncash-return'
     | '/superadmin'
+    | '/api/moncash-webhook'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/moncash-return'
     | '/superadmin'
+    | '/api/moncash-webhook'
     | '/app/ekip'
     | '/app/enpresyon'
     | '/app/enstitisyon'
@@ -260,6 +272,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MoncashReturnRoute: typeof MoncashReturnRoute
   SuperadminRoute: typeof SuperadminRoute
+  ApiMoncashWebhookRoute: typeof ApiMoncashWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       path: '/superadmin'
       fullPath: '/superadmin'
       preLoaderRoute: typeof SuperadminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/moncash-webhook': {
+      id: '/api/moncash-webhook'
+      path: '/api/moncash-webhook'
+      fullPath: '/api/moncash-webhook'
+      preLoaderRoute: typeof ApiMoncashWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -441,6 +461,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MoncashReturnRoute: MoncashReturnRoute,
   SuperadminRoute: SuperadminRoute,
+  ApiMoncashWebhookRoute: ApiMoncashWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
