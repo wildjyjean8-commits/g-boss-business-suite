@@ -36,6 +36,7 @@ export type Database = {
           tax_number: string | null
           logo_url: string | null
           kyc_status: string
+          subscription_paid_until: string | null
           created_at: string
           updated_at: string
         }
@@ -62,6 +63,7 @@ export type Database = {
           tax_number?: string | null
           logo_url?: string | null
           kyc_status?: string
+          subscription_paid_until?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -88,6 +90,7 @@ export type Database = {
           tax_number?: string | null
           logo_url?: string | null
           kyc_status?: string
+          subscription_paid_until?: string | null
           created_at?: string
           updated_at?: string
         }

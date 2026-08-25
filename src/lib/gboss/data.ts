@@ -155,6 +155,7 @@ export type Business = {
   taxNumber: string | null;
   logoUrl: string | null;
   kycStatus: "not_submitted" | "pending" | "approved" | "rejected";
+  subscriptionPaidUntil: string | null;
   products: Product[];
   invoices: Invoice[];
   tasks: Task[];
@@ -196,6 +197,7 @@ export const BUSINESSES: Business[] = [
     taxNumber: null,
     logoUrl: null,
     kycStatus: "not_submitted",
+    subscriptionPaidUntil: null,
     products: [
       { id: "p1", sku: "RST-0001", name: "Griyo pòsyon", category: "Nourriture", price: 750, cost: 420, stock: 42, min: 15, supplier: "Distribisyon Nò", sold: 186 },
       { id: "p2", sku: "RST-0002", name: "Diri kole", category: "Nourriture", price: 350, cost: 180, stock: 12, min: 20, supplier: "Distribisyon Nò", sold: 240 },
@@ -258,6 +260,7 @@ export const BUSINESSES: Business[] = [
     taxNumber: null,
     logoUrl: null,
     kycStatus: "not_submitted",
+    subscriptionPaidUntil: null,
     products: [
       { id: "c1", sku: "CST-0001", name: "Sak siman", category: "Matériaux de base", price: 620, cost: 540, stock: 240, min: 100, supplier: "Sima Ayiti", sold: 1200 },
       { id: "c2", sku: "CST-0002", name: "Blòk 8", category: "Matériaux de base", price: 95, cost: 72, stock: 60, min: 150, supplier: "Blòk Delmas", sold: 3400 },
@@ -358,42 +361,3 @@ export function taskMetrics(b: Business) {
   };
 }
 
-/* ---------- Données plateforme (Super-Admin) ---------- */
-
-export type PlatformAccount = {
-  id: string;
-  name: string;
-  sector: string;
-  plan: PlanId;
-  addonHotel: boolean;
-  businesses: number;
-  students: number;
-  joined: string;
-  status: "actif" | "essai" | "restreint" | "annule";
-  paidOnTime: boolean;
-};
-
-export const PLATFORM_ACCOUNTS: PlatformAccount[] = [
-  { id: "AC-001", name: "Ti Bwat Restaurant", sector: "Restaurant", plan: "estanda", addonHotel: true, businesses: 2, students: 0, joined: "2026-02-11", status: "actif", paidOnTime: true },
-  { id: "AC-002", name: "JW Konstriksyon", sector: "Construction / Matériaux", plan: "premyom", addonHotel: false, businesses: 1, students: 0, joined: "2026-03-02", status: "actif", paidOnTime: true },
-  { id: "AC-003", name: "Boutik Lakay", sector: "Boutique / Détail", plan: "esansyel", addonHotel: false, businesses: 1, students: 0, joined: "2026-04-19", status: "essai", paidOnTime: true },
-  { id: "AC-004", name: "Institut Sainte-Rose", sector: "Institution", plan: "kanpis", addonHotel: false, businesses: 1, students: 240, joined: "2026-01-25", status: "actif", paidOnTime: false },
-  { id: "AC-005", name: "Garaj Delmas 33", sector: "Automobile", plan: "estanda", addonHotel: false, businesses: 1, students: 0, joined: "2026-05-06", status: "restreint", paidOnTime: false },
-  { id: "AC-006", name: "Salon Belle Vue", sector: "Salon de beauté", plan: "esansyel", addonHotel: false, businesses: 1, students: 0, joined: "2026-05-28", status: "annule", paidOnTime: false },
-  { id: "AC-007", name: "Kay Repo Guest House", sector: "Services professionnels", plan: "premyom", addonHotel: true, businesses: 2, students: 0, joined: "2026-06-14", status: "actif", paidOnTime: true },
-  { id: "AC-008", name: "Centre Pwofesyonèl Nò", sector: "Institution", plan: "kanpis", addonHotel: false, businesses: 1, students: 96, joined: "2026-07-03", status: "essai", paidOnTime: true },
-];
-
-export function accountMRR(a: PlatformAccount) {
-  return planPrice(a.plan, a.businesses, a.addonHotel, a.students);
-}
-
-export const PLATFORM_GROWTH = [
-  { month: "Fév", accounts: 1, revenue: 819 },
-  { month: "Mar", accounts: 2, revenue: 2184 },
-  { month: "Avr", accounts: 3, revenue: 2534 },
-  { month: "Mai", accounts: 5, revenue: 3514 },
-  { month: "Jun", accounts: 6, revenue: 4879 },
-  { month: "Jul", accounts: 7, revenue: 12079 },
-  { month: "Aoû", accounts: 8, revenue: 19279 },
-];

@@ -38,7 +38,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-type NavItem = { to: string; key: string; icon: typeof LayoutDashboard; requires?: "pos" | "hotel" | "school" };
+type NavItem = {
+  to: string;
+  key: string;
+  icon: typeof LayoutDashboard;
+  requires?: "pos" | "hotel" | "school";
+};
 
 const NAV: NavItem[] = [
   { to: "/app", key: "dashboard", icon: LayoutDashboard },
@@ -203,7 +208,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="min-w-0 flex-1">
             <p className="flex items-center gap-1.5 truncate font-display text-sm font-semibold">
               <span className="truncate">{biz.name}</span>
-              <KycStatusBadge status={biz.kycStatus} onClick={() => navigate({ to: "/app/paramet" })} />
+              <KycStatusBadge
+                status={biz.kycStatus}
+                onClick={() => navigate({ to: "/app/paramet" })}
+              />
             </p>
             <p className="gb-num truncate text-[11px] text-muted-foreground">
               {biz.currency} · 1 USD = {biz.rate} HTG · taxe {biz.taxRate}%

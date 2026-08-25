@@ -26,14 +26,12 @@ import {
 } from "recharts";
 import { GBossLogo } from "@/components/gboss/logo";
 import { KpiCard, PageHeader, Panel, StatusPill } from "@/components/gboss/ui";
+import { PLANS, money, type PlanId } from "@/lib/gboss/data";
 import {
-  PLANS,
-  PLATFORM_ACCOUNTS,
-  PLATFORM_GROWTH,
-  accountMRR,
-  money,
-  type PlanId,
-} from "@/lib/gboss/data";
+  fetchPlatformOverview,
+  type PlatformAccount,
+  type PlatformGrowthPoint,
+} from "@/lib/gboss/platform-admin";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -100,7 +98,9 @@ const STATUS_LABEL = {
 
 function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
   const [pending, setPending] = useState<PendingKycSubmission[]>([]);
-  const [urls, setUrls] = useState<Record<string, { id: string | null; selfie: string | null }>>({});
+  const [urls, setUrls] = useState<Record<string, { id: string | null; selfie: string | null }>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -140,7 +140,11 @@ function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
     <Panel
       className="mt-4"
       title="Demand KYC an atant"
-      action={<StatusPill tone={pending.length > 0 ? "low" : "neutral"}>{pending.length} an atant</StatusPill>}
+      action={
+        <StatusPill tone={pending.length > 0 ? "low" : "neutral"}>
+          {pending.length} an atant
+        </StatusPill>
+      }
     >
       {loading ? (
         <p className="text-sm text-muted-foreground">Chajman...</p>
@@ -156,7 +160,8 @@ function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
                 <div>
                   <p className="text-sm font-semibold">{sub.businessName}</p>
                   <p className="text-xs text-muted-foreground">
-                    {sub.documentType.toUpperCase()} · soumèt {new Date(sub.submittedAt).toLocaleDateString("fr-HT")}
+                    {sub.documentType.toUpperCase()} · soumèt{" "}
+                    {new Date(sub.submittedAt).toLocaleDateString("fr-HT")}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -181,10 +186,18 @@ function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
               </div>
               <div className="flex gap-2">
                 {urls[sub.id]?.id ? (
-                  <img src={urls[sub.id]!.id!} alt="Dokiman idantite" className="h-28 w-40 rounded-lg border border-border object-cover" />
+                  <img
+                    src={urls[sub.id]!.id!}
+                    alt="Dokiman idantite"
+                    className="h-28 w-40 rounded-lg border border-border object-cover"
+                  />
                 ) : null}
                 {urls[sub.id]?.selfie ? (
-                  <img src={urls[sub.id]!.selfie!} alt="Selfie" className="h-28 w-40 rounded-lg border border-border object-cover" />
+                  <img
+                    src={urls[sub.id]!.selfie!}
+                    alt="Selfie"
+                    className="h-28 w-40 rounded-lg border border-border object-cover"
+                  />
                 ) : null}
               </div>
             </div>
@@ -198,29 +211,62 @@ function KycReviewPanel({ reviewerId }: { reviewerId: string }) {
 function SuperAdmin() {
   const { session } = Route.useRouteContext();
   const [filter, setFilter] = useState<"tous" | keyof typeof STATUS_LABEL>("tous");
+  const [accounts, setAccounts] = useState<PlatformAccount[]>([]);
+  const [growth, setGrowth] = useState<PlatformGrowthPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    fetchPlatformOverview({ data: { accessToken: session.access_token } })
+      .then((overview) => {
+        if (!active) return;
+        setAccounts(overview.accounts);
+        setGrowth(overview.growth);
+      })
+      .catch((err) => {
+        toast.error(err instanceof Error ? err.message : "Echèk chajman done platfòm nan");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session.access_token]);
 
   const metrics = useMemo(() => {
-    const active = PLATFORM_ACCOUNTS.filter((a) => a.status === "actif");
-    const mrr = active.reduce((s, a) => s + accountMRR(a), 0);
-    const trials = PLATFORM_ACCOUNTS.filter((a) => a.status === "essai");
-    const late = PLATFORM_ACCOUNTS.filter((a) => !a.paidOnTime);
-    const students = PLATFORM_ACCOUNTS.reduce((s, a) => s + a.students, 0);
-    const businesses = PLATFORM_ACCOUNTS.reduce((s, a) => s + a.businesses, 0);
+    const active = accounts.filter((a) => a.status === "actif");
+    const mrr = active.reduce((s, a) => s + a.mrr, 0);
+    const trials = accounts.filter((a) => a.status === "essai");
+    const late = accounts.filter((a) => !a.paidOnTime);
+    const students = accounts.reduce((s, a) => s + a.students, 0);
+    const businesses = accounts.reduce((s, a) => s + a.businesses, 0);
     const byPlan = (Object.keys(PLANS) as PlanId[]).map((id) => ({
       plan: PLANS[id].name,
-      comptes: PLATFORM_ACCOUNTS.filter((a) => a.plan === id).length,
-      revenu: PLATFORM_ACCOUNTS.filter((a) => a.plan === id).reduce((s, a) => s + accountMRR(a), 0),
+      comptes: accounts.filter((a) => a.plan === id).length,
+      revenu: accounts.filter((a) => a.plan === id).reduce((s, a) => s + a.mrr, 0),
     }));
     return { active, mrr, trials, late, students, businesses, byPlan };
-  }, []);
+  }, [accounts]);
 
-  const rows = PLATFORM_ACCOUNTS.filter((a) => filter === "tous" || a.status === filter);
+  const rows = accounts.filter((a) => filter === "tous" || a.status === filter);
+  const lastGrowth = growth.at(-1);
+  const prevGrowth = growth.at(-2);
+  const growthDelta =
+    lastGrowth && prevGrowth && prevGrowth.revenue > 0
+      ? Math.round((lastGrowth.revenue / prevGrowth.revenue - 1) * 100)
+      : null;
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-3">
         <GBossLogo />
-        <Button asChild variant="ghost" size="sm" className="ml-auto gap-2 text-white hover:bg-sidebar-accent hover:text-white">
+        <Button
+          asChild
+          variant="ghost"
+          size="sm"
+          className="ml-auto gap-2 text-white hover:bg-sidebar-accent hover:text-white"
+        >
           <Link to="/app">
             <ArrowLeft className="size-4" /> App
           </Link>
@@ -238,12 +284,14 @@ function SuperAdmin() {
             label="Revenu récurrent (MRR)"
             value={money(metrics.mrr, "HTG")}
             tone="green"
-            delta={`+${Math.round(((PLATFORM_GROWTH.at(-1)!.revenue / PLATFORM_GROWTH.at(-2)!.revenue) - 1) * 100)}% vs mois passé`}
+            {...(growthDelta !== null
+              ? { delta: `${growthDelta >= 0 ? "+" : ""}${growthDelta}% vs mois passé` }
+              : {})}
             icon={<DollarSign className="size-4" />}
           />
           <KpiCard
             label="Comptes abonnés"
-            value={String(PLATFORM_ACCOUNTS.length)}
+            value={String(accounts.length)}
             tone="blue"
             hint={`${metrics.active.length} actifs · ${metrics.trials.length} en essai`}
             icon={<Users className="size-4" />}
@@ -268,7 +316,7 @@ function SuperAdmin() {
           <Panel title="Croissance de la plateforme">
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={PLATFORM_GROWTH}>
+                <AreaChart data={growth}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={11} />
                   <YAxis stroke="var(--muted-foreground)" fontSize={11} />
@@ -318,7 +366,12 @@ function SuperAdmin() {
                       fontSize: 12,
                     }}
                   />
-                  <Bar dataKey="revenu" name="Revenu HTG" fill="var(--chart-2)" radius={[6, 6, 0, 0]} />
+                  <Bar
+                    dataKey="revenu"
+                    name="Revenu HTG"
+                    fill="var(--chart-2)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -346,7 +399,9 @@ function SuperAdmin() {
                   onClick={() => setFilter(f)}
                   className={cn(
                     "rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
-                    filter === f ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground",
+                    filter === f
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-secondary text-muted-foreground",
                   )}
                 >
                   {f === "tous" ? "Tous" : STATUS_LABEL[f]}
@@ -368,37 +423,54 @@ function SuperAdmin() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((a) => (
-                  <tr key={a.id} className="border-b border-border/60 last:border-0">
-                    <td className="py-2.5">
-                      <p className="font-medium text-foreground">{a.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {a.id} · {a.sector}
-                      </p>
-                    </td>
-                    <td className="py-2.5">
-                      <p>{PLANS[a.plan].name}</p>
-                      {a.addonHotel ? (
-                        <p className="text-xs text-gold">+ add-on hôtel</p>
-                      ) : null}
-                      {a.students > 0 ? (
-                        <p className="gb-num text-xs text-muted-foreground">{a.students} élèves</p>
-                      ) : null}
-                    </td>
-                    <td className="gb-num py-2.5">{a.businesses}</td>
-                    <td className="gb-num py-2.5 text-xs text-muted-foreground">{a.joined}</td>
-                    <td className="gb-num py-2.5 text-right font-semibold">{money(accountMRR(a), "HTG")}</td>
-                    <td className="py-2.5 text-right">
-                      <StatusPill tone={STATUS_TONE[a.status]}>{STATUS_LABEL[a.status]}</StatusPill>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
+                      Chajman done platfòm nan...
                     </td>
                   </tr>
-                ))}
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-sm text-muted-foreground">
+                      Okenn kont pou kounye a.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((a) => (
+                    <tr key={a.ownerId} className="border-b border-border/60 last:border-0">
+                      <td className="py-2.5">
+                        <p className="font-medium text-foreground">{a.name}</p>
+                        <p className="text-xs text-muted-foreground">{a.sector}</p>
+                      </td>
+                      <td className="py-2.5">
+                        <p>{PLANS[a.plan].name}</p>
+                        {a.addonHotel ? <p className="text-xs text-gold">+ add-on hôtel</p> : null}
+                        {a.students > 0 ? (
+                          <p className="gb-num text-xs text-muted-foreground">
+                            {a.students} élèves
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="gb-num py-2.5">{a.businesses}</td>
+                      <td className="gb-num py-2.5 text-xs text-muted-foreground">{a.joined}</td>
+                      <td className="gb-num py-2.5 text-right font-semibold">
+                        {money(a.mrr, "HTG")}
+                      </td>
+                      <td className="py-2.5 text-right">
+                        <StatusPill tone={STATUS_TONE[a.status]}>
+                          {STATUS_LABEL[a.status]}
+                        </StatusPill>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
           <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <TrendingUp className="size-3.5" />
-            {metrics.late.length} compte(s) en retard de paiement · restriction automatique après échéance.
+            {metrics.late.length} compte(s) en retard de paiement · restriction automatique après
+            échéance.
           </p>
         </Panel>
 

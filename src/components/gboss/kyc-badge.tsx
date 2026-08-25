@@ -22,7 +22,8 @@ export function KycStatusBadge({
   onClick?: () => void;
   className?: string;
 }) {
-  if (status === "approved") return className ? <VerifiedBadge className={className} /> : <VerifiedBadge />;
+  if (status === "approved")
+    return className ? <VerifiedBadge className={className} /> : <VerifiedBadge />;
 
   const config = {
     not_submitted: {

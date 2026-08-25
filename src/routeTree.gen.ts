@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as EnskripsyonRouteImport } from './routes/enskripsyon'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MoncashReturnRouteImport } from './routes/moncash-return'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppEkipRouteImport } from './routes/app.ekip'
@@ -46,6 +47,11 @@ const EnskripsyonRoute = EnskripsyonRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MoncashReturnRoute = MoncashReturnRouteImport.update({
+  id: '/moncash-return',
+  path: '/moncash-return',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperadminRoute = SuperadminRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/enskripsyon': typeof EnskripsyonRoute
   '/login': typeof LoginRoute
+  '/moncash-return': typeof MoncashReturnRoute
   '/superadmin': typeof SuperadminRoute
   '/app/ekip': typeof AppEkipRoute
   '/app/enpresyon': typeof AppEnpresyonRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/moncash-return'
     | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/enskripsyon'
     | '/login'
+    | '/moncash-return'
     | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/enskripsyon'
     | '/login'
+    | '/moncash-return'
     | '/superadmin'
     | '/app/ekip'
     | '/app/enpresyon'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   EnskripsyonRoute: typeof EnskripsyonRoute
   LoginRoute: typeof LoginRoute
+  MoncashReturnRoute: typeof MoncashReturnRoute
   SuperadminRoute: typeof SuperadminRoute
 }
 
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/moncash-return': {
+      id: '/moncash-return'
+      path: '/moncash-return'
+      fullPath: '/moncash-return'
+      preLoaderRoute: typeof MoncashReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/superadmin': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   EnskripsyonRoute: EnskripsyonRoute,
   LoginRoute: LoginRoute,
+  MoncashReturnRoute: MoncashReturnRoute,
   SuperadminRoute: SuperadminRoute,
 }
 export const routeTree = rootRouteImport
