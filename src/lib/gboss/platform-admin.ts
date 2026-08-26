@@ -1,18 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { PLANS, planPrice, type PlanId } from "@/lib/gboss/data";
 
-async function requireSuperAdmin(accessToken: string) {
+async function requireSuperAdmin(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
-  if (userError || !userData.user) {
-    throw new Error("Sesyon ekspire — rekonekte epi eseye ankò.");
-  }
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("is_super_admin")
-    .eq("id", userData.user.id)
+    .eq("id", userId)
     .single();
 
   if (profileError || !profile?.is_super_admin) {
@@ -63,9 +59,9 @@ const MONTH_LABELS = [
 ];
 
 export const fetchPlatformOverview = createServerFn({ method: "GET" })
-  .validator((data: { accessToken: string }) => data)
-  .handler(async ({ data }): Promise<PlatformOverview> => {
-    const { supabaseAdmin } = await requireSuperAdmin(data.accessToken);
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PlatformOverview> => {
+    const { supabaseAdmin } = await requireSuperAdmin(context.userId);
 
     const { data: businesses, error: bizError } = await supabaseAdmin
       .from("businesses")

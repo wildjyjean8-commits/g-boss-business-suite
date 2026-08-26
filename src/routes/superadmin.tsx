@@ -217,7 +217,7 @@ function SuperAdmin() {
 
   useEffect(() => {
     let active = true;
-    fetchPlatformOverview({ data: { accessToken: session.access_token } })
+    fetchPlatformOverview({ headers: { Authorization: `Bearer ${session.access_token}` } })
       .then((overview) => {
         if (!active) return;
         setAccounts(overview.accounts);

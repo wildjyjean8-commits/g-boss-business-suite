@@ -254,7 +254,8 @@ function Settings() {
       if (!accessToken) throw new Error("Sesyon ekspire — rekonekte epi eseye ankò.");
 
       const result = await createSubscriptionPayment({
-        data: { businessId: biz.id, accessToken },
+        data: { businessId: biz.id },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       window.location.href = result.redirectUrl;
     } catch (err) {

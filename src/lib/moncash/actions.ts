@@ -1,16 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { supabaseAdmin as SupabaseAdminType } from "@/integrations/supabase/client.server";
 import { PLANS, MULTI_BUSINESS_SURCHARGE, HOTEL_ADDON_PRICE, type PlanId } from "@/lib/gboss/data";
 
-type AuthedInput = { accessToken: string };
-
-async function requireOwnedBusiness(businessId: string, accessToken: string) {
+async function requireOwnedBusiness(businessId: string, userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
-  if (userError || !userData.user) {
-    throw new Error("Sesyon ekspire — rekonekte epi eseye ankò.");
-  }
 
   const { data: biz, error: bizError } = await supabaseAdmin
     .from("businesses")
@@ -18,11 +12,11 @@ async function requireOwnedBusiness(businessId: string, accessToken: string) {
     .eq("id", businessId)
     .single();
 
-  if (bizError || !biz || biz.owner_id !== userData.user.id) {
+  if (bizError || !biz || biz.owner_id !== userId) {
     throw new Error("Ou pa gen dwa sou biznis sa a.");
   }
 
-  return { supabaseAdmin, userId: userData.user.id, biz };
+  return { supabaseAdmin, biz };
 }
 
 async function computeSubscriptionAmount(
@@ -58,9 +52,10 @@ function siteUrl(): string {
 }
 
 export const createSubscriptionPayment = createServerFn({ method: "POST" })
-  .validator((data: AuthedInput & { businessId: string }) => data)
-  .handler(async ({ data }) => {
-    const { supabaseAdmin, biz } = await requireOwnedBusiness(data.businessId, data.accessToken);
+  .middleware([requireSupabaseAuth])
+  .validator((data: { businessId: string }) => data)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin, biz } = await requireOwnedBusiness(data.businessId, context.userId);
     const { createMccPayment } = await import("@/lib/moncashconnect/client.server");
 
     const amount = await computeSubscriptionAmount(supabaseAdmin, biz);
