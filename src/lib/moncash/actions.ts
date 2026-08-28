@@ -12,8 +12,16 @@ async function requireOwnedBusiness(businessId: string, userId: string) {
     .eq("id", businessId)
     .single();
 
-  if (bizError || !biz || biz.owner_id !== userId) {
-    throw new Error("Ou pa gen dwa sou biznis sa a.");
+  if (bizError) {
+    throw new Error(`Ou pa gen dwa sou biznis sa a. (DB error: ${bizError.message} / code: ${bizError.code ?? "?"})`);
+  }
+  if (!biz) {
+    throw new Error(`Ou pa gen dwa sou biznis sa a. (business ID ${businessId} pa egziste)`);
+  }
+  if (biz.owner_id !== userId) {
+    throw new Error(
+      `Ou pa gen dwa sou biznis sa a. (owner_id: ${biz.owner_id} != userId: ${userId})`,
+    );
   }
 
   return { supabaseAdmin, biz };
