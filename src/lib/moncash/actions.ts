@@ -16,7 +16,14 @@ async function requireOwnedBusiness(businessId: string, userId: string) {
     throw new Error(`Ou pa gen dwa sou biznis sa a. (DB error: ${bizError.message} / code: ${bizError.code ?? "?"})`);
   }
   if (!biz) {
-    throw new Error(`Ou pa gen dwa sou biznis sa a. (business ID ${businessId} pa egziste)`);
+    const { count: ownedByUser } = await supabaseAdmin
+      .from("businesses")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", userId);
+    const host = (process.env["SUPABASE_URL"] ?? "").replace(/^https?:\/\//, "").split(".")[0];
+    throw new Error(
+      `Ou pa gen dwa sou biznis sa a. (business ID ${businessId} pa egziste nan pwojè sèvè a [${host}]; sèvè a wè ${ownedByUser ?? 0} biznis total pou userId ${userId})`,
+    );
   }
   if (biz.owner_id !== userId) {
     throw new Error(
