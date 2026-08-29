@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Loader2, Plus, Trash2 } from "lucide-react";
+import { GraduationCap, Loader2, Plus, Receipt, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
@@ -30,10 +30,13 @@ import {
 import { PLANS, money } from "@/lib/gboss/data";
 import {
   createStudent,
+  createStudentPayment,
   deleteStudent,
+  fetchStudentPayments,
   fetchStudents,
   setStudentStatus,
   type StudentInput,
+  type StudentPaymentInput,
   type StudentRow,
   type StudentStatus,
 } from "@/lib/gboss/students";
@@ -100,6 +103,34 @@ function School() {
       queryClient.invalidateQueries({ queryKey: ["students", biz.id] });
     },
     onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
+  // ---------- Peman eskolarite ----------
+  const paymentsQuery = useQuery({ queryKey: ["student-payments", biz.id], queryFn: () => fetchStudentPayments(biz.id) });
+  const payments = paymentsQuery.data ?? [];
+
+  const [payTarget, setPayTarget] = useState<StudentRow | null>(null);
+  const EMPTY_PAYMENT: Omit<StudentPaymentInput, "student_id"> = {
+    label: "Frè eskolarite",
+    amount_due: 0,
+    amount_paid: 0,
+    due_date: null,
+  };
+  const [payForm, setPayForm] = useState(EMPTY_PAYMENT);
+
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!payTarget) return;
+      if (!payForm.amount_paid || payForm.amount_paid <= 0) throw new Error("Antre yon montan valab.");
+      await createStudentPayment(biz.id, { student_id: payTarget.id, ...payForm });
+    },
+    onSuccess: () => {
+      toast.success("Peman anrejistre — revni a ajoute nan Kontabilite otomatikman");
+      setPayTarget(null);
+      setPayForm(EMPTY_PAYMENT);
+      queryClient.invalidateQueries({ queryKey: ["student-payments", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur pandan peman an"),
   });
 
   return (
@@ -188,6 +219,16 @@ function School() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => {
+                        setPayTarget(s);
+                        setPayForm(EMPTY_PAYMENT);
+                      }}
+                    >
+                      <Receipt className="size-3.5" /> Peman
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() =>
                         statusMutation.mutate({
                           id: s.id,
@@ -235,6 +276,59 @@ function School() {
           )}
         </Panel>
       </div>
+
+      <Dialog open={!!payTarget} onOpenChange={(v) => !v && setPayTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Peman — {payTarget?.name}</DialogTitle>
+            <DialogDescription>Sa ap ajoute otomatikman kòm revni nan Kontabilite.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="pf-label">Rezon</Label>
+              <Input id="pf-label" value={payForm.label} onChange={(e) => setPayForm((f) => ({ ...f, label: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="pf-due">Montan total dwe</Label>
+                <Input id="pf-due" type="number" value={payForm.amount_due || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_due: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="pf-paid">Montan peye</Label>
+                <Input id="pf-paid" type="number" value={payForm.amount_paid || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_paid: Number(e.target.value) }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => paymentMutation.mutate()} disabled={paymentMutation.isPending}>
+              {paymentMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Anrejistre
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Panel title="Dènye peman eskolarite (Kontabilite)" className="mt-4">
+        {payments.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Pa gen peman anrejistre ankò.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {payments.slice(0, 8).map((p) => {
+              const st = students.find((s) => s.id === p.student_id);
+              return (
+                <div key={p.id} className="flex items-center gap-2 text-sm">
+                  <Receipt className="size-4 shrink-0 text-kpi-orange" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {st?.name ?? "Elèv"} · {p.label}
+                  </span>
+                  <StatusPill tone={p.status === "paye" ? "ok" : p.status === "pasyèl" ? "low" : "crit"}>{p.status}</StatusPill>
+                  <span className="gb-num font-semibold">{money(p.amount_paid, biz.currency)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>

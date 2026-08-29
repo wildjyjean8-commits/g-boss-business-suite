@@ -45,3 +45,44 @@ export async function deleteHotelUnit(id: string): Promise<void> {
   const { error } = await supabase.from("hotel_units").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ---------- Rezèvasyon (kreye revni nan Kontabilite otomatikman) ----------
+
+export type ReservationRow = Database["public"]["Tables"]["hotel_reservations"]["Row"];
+
+export type ReservationInput = {
+  unit_id: string;
+  guest_name: string;
+  guest_id_number: string | null;
+  nationality: string | null;
+  adults: number;
+  children: number;
+  checkin: string;
+  checkout: string;
+  amount_paid: number;
+  agreed_damage_policy: boolean;
+  agreed_noise_policy: boolean;
+};
+
+export async function fetchReservations(businessId: string): Promise<ReservationRow[]> {
+  const { data, error } = await supabase
+    .from("hotel_reservations")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("checkin", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createReservation(businessId: string, input: ReservationInput): Promise<void> {
+  const { error } = await supabase.from("hotel_reservations").insert({
+    business_id: businessId,
+    ...input,
+  });
+  if (error) throw error;
+}
+
+export async function updateReservationAmountPaid(id: string, amountPaid: number): Promise<void> {
+  const { error } = await supabase.from("hotel_reservations").update({ amount_paid: amountPaid }).eq("id", id);
+  if (error) throw error;
+}

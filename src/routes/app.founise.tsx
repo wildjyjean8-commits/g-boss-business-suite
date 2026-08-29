@@ -29,13 +29,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  createPurchase,
   createSupplier,
   deleteSupplier,
+  fetchPurchases,
   fetchSuppliers,
   setSupplierActive,
+  type PurchaseInput,
   type SupplierInput,
   type SupplierRow,
 } from "@/lib/gboss/suppliers";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { money } from "@/lib/gboss/data";
+import { Receipt } from "lucide-react";
 
 export const Route = createFileRoute("/app/founise")({
   head: () => ({
@@ -60,9 +72,37 @@ function Suppliers() {
   const onGBoss = list.filter((x) => x.on_gboss).length;
   const avgRating = list.length ? list.reduce((s, x) => s + (x.rating ?? 0), 0) / list.length : 0;
 
+  const purchasesQuery = useQuery({ queryKey: ["supplier-purchases", biz.id], queryFn: () => fetchPurchases(biz.id) });
+  const purchases = purchasesQuery.data ?? [];
+  const purchasesById = new Map(list.map((s) => [s.id, s.name]));
+
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<SupplierInput>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<SupplierRow | null>(null);
+
+  const [purchaseOpen, setPurchaseOpen] = useState(false);
+  const EMPTY_PURCHASE: PurchaseInput = {
+    supplier_id: "",
+    description: "",
+    amount: 0,
+    purchase_date: new Date().toISOString().slice(0, 10),
+  };
+  const [purchaseForm, setPurchaseForm] = useState<PurchaseInput>(EMPTY_PURCHASE);
+
+  const purchaseMutation = useMutation({
+    mutationFn: async () => {
+      if (!purchaseForm.supplier_id) throw new Error("Chwazi yon founisè.");
+      if (!purchaseForm.amount || purchaseForm.amount <= 0) throw new Error("Antre yon montan valab.");
+      await createPurchase(biz.id, purchaseForm);
+    },
+    onSuccess: () => {
+      toast.success("Acha anrejistre — depans la ajoute nan Kontabilite otomatikman");
+      setPurchaseOpen(false);
+      setPurchaseForm(EMPTY_PURCHASE);
+      queryClient.invalidateQueries({ queryKey: ["supplier-purchases", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur pandan anrejistreman an"),
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -100,6 +140,74 @@ function Suppliers() {
         title="Fournisseurs"
         subtitle={`${list.length} fournisseurs · ${biz.name}`}
         actions={
+          <>
+          <Dialog open={purchaseOpen} onOpenChange={setPurchaseOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Receipt className="size-4" /> Anrejistre yon acha
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nouvo acha / depans</DialogTitle>
+                <DialogDescription>Sa ap ajoute otomatikman kòm yon depans nan Kontabilite.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Founisè</Label>
+                  <Select
+                    value={purchaseForm.supplier_id}
+                    onValueChange={(v) => setPurchaseForm((f) => ({ ...f, supplier_id: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chwazi yon founisè" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {list.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="p-desc">Deskripsyon</Label>
+                  <Input
+                    id="p-desc"
+                    value={purchaseForm.description ?? ""}
+                    onChange={(e) => setPurchaseForm((f) => ({ ...f, description: e.target.value || null }))}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-amount">Montan</Label>
+                    <Input
+                      id="p-amount"
+                      type="number"
+                      value={purchaseForm.amount || ""}
+                      onChange={(e) => setPurchaseForm((f) => ({ ...f, amount: Number(e.target.value) }))}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="p-date">Dat</Label>
+                    <Input
+                      id="p-date"
+                      type="date"
+                      value={purchaseForm.purchase_date}
+                      onChange={(e) => setPurchaseForm((f) => ({ ...f, purchase_date: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => purchaseMutation.mutate()} disabled={purchaseMutation.isPending}>
+                  {purchaseMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Anrejistre
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -151,6 +259,7 @@ function Suppliers() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </>
         }
       />
 
@@ -196,6 +305,25 @@ function Suppliers() {
                 <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget(s)}>
                   <Trash2 className="size-4" />
                 </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel title="Dènye acha (Kontabilite)" className="mt-4">
+        {purchases.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Pa gen acha anrejistre ankò.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {purchases.slice(0, 8).map((p) => (
+              <div key={p.id} className="flex items-center gap-2 text-sm">
+                <Receipt className="size-4 shrink-0 text-kpi-orange" />
+                <span className="min-w-0 flex-1 truncate">
+                  {purchasesById.get(p.supplier_id) ?? "Founisè"} {p.description ? `· ${p.description}` : ""}
+                </span>
+                <span className="gb-num text-xs text-muted-foreground">{p.purchase_date}</span>
+                <span className="gb-num font-semibold">{money(p.amount, biz.currency)}</span>
               </div>
             ))}
           </div>

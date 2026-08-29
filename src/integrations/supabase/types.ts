@@ -155,6 +155,7 @@ export type Database = {
           role: string
           department: string | null
           phone: string | null
+          salary: number | null
           active: boolean
           present: boolean
           created_at: string
@@ -168,6 +169,7 @@ export type Database = {
           role: string
           department?: string | null
           phone?: string | null
+          salary?: number | null
           active?: boolean
           present?: boolean
           created_at?: string
@@ -181,6 +183,7 @@ export type Database = {
           role?: string
           department?: string | null
           phone?: string | null
+          salary?: number | null
           active?: boolean
           present?: boolean
           created_at?: string
@@ -458,6 +461,72 @@ export type Database = {
           type?: string
           created_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      supplier_purchases: {
+        Row: {
+          id: string
+          business_id: string
+          supplier_id: string
+          description: string | null
+          amount: number
+          purchase_date: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          supplier_id: string
+          description?: string | null
+          amount: number
+          purchase_date?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          supplier_id?: string
+          description?: string | null
+          amount?: number
+          purchase_date?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      salary_payments: {
+        Row: {
+          id: string
+          business_id: string
+          member_id: string
+          amount: number
+          pay_date: string
+          period_label: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          member_id: string
+          amount: number
+          pay_date?: string
+          period_label?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          member_id?: string
+          amount?: number
+          pay_date?: string
+          period_label?: string | null
+          created_by?: string | null
+          created_at?: string
         }
         Relationships: []
       }

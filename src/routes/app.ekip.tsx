@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Power, UserPlus, Users } from "lucide-react";
+import { Banknote, Loader2, Power, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
@@ -24,13 +24,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PLANS, ROLES } from "@/lib/gboss/data";
+import { PLANS, ROLES, money } from "@/lib/gboss/data";
 import {
   createMember,
   fetchMembers,
   fetchPerformance,
+  fetchSalaryPayments,
+  paySalary,
   setMemberActive,
+  setMemberSalary,
   type MemberInput,
+  type MemberRow,
 } from "@/lib/gboss/members";
 
 export const Route = createFileRoute("/app/ekip")({
@@ -91,6 +95,44 @@ function Team() {
       queryClient.invalidateQueries({ queryKey: ["members", biz.id] });
     },
     onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
+  // ---------- Salè & peman ----------
+  const salaryPaymentsQuery = useQuery({
+    queryKey: ["salary-payments", biz.id],
+    queryFn: () => fetchSalaryPayments(biz.id),
+  });
+  const salaryPayments = salaryPaymentsQuery.data ?? [];
+
+  const [payTarget, setPayTarget] = useState<MemberRow | null>(null);
+  const [payAmount, setPayAmount] = useState<number>(0);
+  const [payLabel, setPayLabel] = useState("");
+
+  const salaryMutation = useMutation({
+    mutationFn: async ({ id, salary }: { id: string; salary: number | null }) => setMemberSalary(id, salary),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members", biz.id] }),
+    onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
+  const payMutation = useMutation({
+    mutationFn: async () => {
+      if (!payTarget) return;
+      if (!payAmount || payAmount <= 0) throw new Error("Antre yon montan valab.");
+      await paySalary(biz.id, {
+        member_id: payTarget.id,
+        amount: payAmount,
+        pay_date: new Date().toISOString().slice(0, 10),
+        period_label: payLabel || null,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Salè peye — depans la ajoute nan Kontabilite otomatikman");
+      setPayTarget(null);
+      setPayAmount(0);
+      setPayLabel("");
+      queryClient.invalidateQueries({ queryKey: ["salary-payments", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur pandan peman an"),
   });
 
   return (
@@ -204,6 +246,16 @@ function Team() {
                       <StatusPill tone={e.present ? "ok" : "neutral"}>{e.present ? "Présent" : "Absent"}</StatusPill>
                       {!e.active ? <StatusPill tone="crit">Désactivé</StatusPill> : null}
                       <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setPayTarget(e);
+                          setPayAmount(e.salary ?? 0);
+                        }}
+                      >
+                        <Banknote className="size-3.5" /> Peye salè
+                      </Button>
+                      <Button
                         variant="ghost"
                         size="icon"
                         className="size-7"
@@ -218,6 +270,21 @@ function Team() {
                       <span className="gb-num shrink-0 text-xs text-muted-foreground">
                         {done}/{totalT} tâches
                       </span>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        <Label htmlFor={`sal-${e.id}`} className="text-xs text-muted-foreground">
+                          Salè
+                        </Label>
+                        <Input
+                          id={`sal-${e.id}`}
+                          type="number"
+                          className="h-7 w-24 text-xs"
+                          defaultValue={e.salary ?? ""}
+                          onBlur={(ev) => {
+                            const v = ev.target.value ? Number(ev.target.value) : null;
+                            if (v !== e.salary) salaryMutation.mutate({ id: e.id, salary: v });
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                 );
@@ -239,6 +306,53 @@ function Team() {
           </ul>
         </Panel>
       </div>
+
+      <Dialog open={!!payTarget} onOpenChange={(v) => !v && setPayTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Peye salè — {payTarget?.name}</DialogTitle>
+            <DialogDescription>Sa ap ajoute otomatikman kòm yon depans nan Kontabilite.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="pay-amount">Montan</Label>
+              <Input id="pay-amount" type="number" value={payAmount || ""} onChange={(e) => setPayAmount(Number(e.target.value))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pay-label">Peryòd (opsyonèl)</Label>
+              <Input id="pay-label" placeholder="Ex: Out 2026" value={payLabel} onChange={(e) => setPayLabel(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => payMutation.mutate()} disabled={payMutation.isPending}>
+              {payMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Peye
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Panel title="Dènye peman salè (Kontabilite)" className="mt-4">
+        {salaryPayments.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Pa gen peman salè anrejistre ankò.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {salaryPayments.slice(0, 8).map((p) => {
+              const m = team.find((t) => t.id === p.member_id);
+              return (
+                <div key={p.id} className="flex items-center gap-2 text-sm">
+                  <Banknote className="size-4 shrink-0 text-kpi-orange" />
+                  <span className="min-w-0 flex-1 truncate">
+                    {m?.name ?? "Anplwaye"} {p.period_label ? `· ${p.period_label}` : ""}
+                  </span>
+                  <span className="gb-num text-xs text-muted-foreground">{p.pay_date}</span>
+                  <span className="gb-num font-semibold">{money(p.amount, biz.currency)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Panel>
     </div>
   );
 }

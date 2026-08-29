@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BedDouble, Loader2, Plus, Trash2 } from "lucide-react";
+import { BedDouble, CalendarPlus, Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
@@ -38,11 +38,14 @@ import {
 import { HOTEL_ADDON_PRICE, money } from "@/lib/gboss/data";
 import {
   createHotelUnit,
+  createReservation,
   deleteHotelUnit,
   fetchHotelUnits,
+  fetchReservations,
   setHotelUnitStatus,
   type HotelUnitInput,
   type HotelUnitRow,
+  type ReservationInput,
   type UnitStatus,
 } from "@/lib/gboss/hotel";
 
@@ -95,6 +98,44 @@ function Hotel() {
   const [form, setForm] = useState<HotelUnitInput>(EMPTY_FORM);
   const [amenityInput, setAmenityInput] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<HotelUnitRow | null>(null);
+
+  const reservationsQuery = useQuery({
+    queryKey: ["hotel-reservations", biz.id],
+    queryFn: () => fetchReservations(biz.id),
+    enabled: biz.hotelAddon,
+  });
+  const reservations = reservationsQuery.data ?? [];
+
+  const EMPTY_RESERVATION: ReservationInput = {
+    unit_id: "",
+    guest_name: "",
+    guest_id_number: null,
+    nationality: null,
+    adults: 1,
+    children: 0,
+    checkin: new Date().toISOString().slice(0, 10),
+    checkout: new Date().toISOString().slice(0, 10),
+    amount_paid: 0,
+    agreed_damage_policy: true,
+    agreed_noise_policy: true,
+  };
+  const [resOpen, setResOpen] = useState(false);
+  const [resForm, setResForm] = useState<ReservationInput>(EMPTY_RESERVATION);
+
+  const reservationMutation = useMutation({
+    mutationFn: async () => {
+      if (!resForm.unit_id) throw new Error("Chwazi yon inite.");
+      if (!resForm.guest_name.trim()) throw new Error("Antre non kliyan an.");
+      await createReservation(biz.id, resForm);
+    },
+    onSuccess: () => {
+      toast.success("Rezèvasyon anrejistre — revni a ajoute nan Kontabilite otomatikman");
+      setResOpen(false);
+      setResForm(EMPTY_RESERVATION);
+      queryClient.invalidateQueries({ queryKey: ["hotel-reservations", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur pandan anrejistreman an"),
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -153,6 +194,67 @@ function Hotel() {
         title="Airbnb / Hôtel"
         subtitle={`Add-on locatif · ${money(HOTEL_ADDON_PRICE, "HTG")}/mois · ${units.length} unités`}
         actions={
+          <>
+          <Dialog open={resOpen} onOpenChange={setResOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <CalendarPlus className="size-4" /> Nouvo rezèvasyon
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nouvo rezèvasyon</DialogTitle>
+                <DialogDescription>Montan peye a ajoute otomatikman kòm revni nan Kontabilite.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Inite</Label>
+                  <Select value={resForm.unit_id} onValueChange={(v) => setResForm((f) => ({ ...f, unit_id: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chwazi yon inite" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {units.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.label} ({u.number})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="r-guest">Non kliyan</Label>
+                  <Input id="r-guest" value={resForm.guest_name} onChange={(e) => setResForm((f) => ({ ...f, guest_name: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="r-checkin">Check-in</Label>
+                  <Input id="r-checkin" type="date" value={resForm.checkin} onChange={(e) => setResForm((f) => ({ ...f, checkin: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="r-checkout">Check-out</Label>
+                  <Input id="r-checkout" type="date" value={resForm.checkout} onChange={(e) => setResForm((f) => ({ ...f, checkout: e.target.value }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="r-adults">Adilt</Label>
+                  <Input id="r-adults" type="number" min={1} value={resForm.adults} onChange={(e) => setResForm((f) => ({ ...f, adults: Number(e.target.value) || 1 }))} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="r-children">Timoun</Label>
+                  <Input id="r-children" type="number" min={0} value={resForm.children} onChange={(e) => setResForm((f) => ({ ...f, children: Number(e.target.value) || 0 }))} />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label htmlFor="r-paid">Montan peye ({biz.currency})</Label>
+                  <Input id="r-paid" type="number" min={0} value={resForm.amount_paid} onChange={(e) => setResForm((f) => ({ ...f, amount_paid: Number(e.target.value) || 0 }))} />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={() => reservationMutation.mutate()} disabled={reservationMutation.isPending}>
+                  {reservationMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Anrejistre
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -272,6 +374,7 @@ function Hotel() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </>
         }
       />
 
@@ -361,6 +464,24 @@ function Hotel() {
           ))
         )}
       </div>
+
+      <Panel title="Dènye rezèvasyon (Kontabilite)" className="mt-4">
+        {reservations.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Pa gen rezèvasyon anrejistre ankò.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {reservations.slice(0, 8).map((r) => (
+              <div key={r.id} className="flex items-center gap-2 text-sm">
+                <CalendarPlus className="size-4 shrink-0 text-kpi-orange" />
+                <span className="min-w-0 flex-1 truncate">
+                  {r.guest_name} · {r.checkin} → {r.checkout}
+                </span>
+                <span className="gb-num font-semibold">{money(r.amount_paid, biz.currency)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>

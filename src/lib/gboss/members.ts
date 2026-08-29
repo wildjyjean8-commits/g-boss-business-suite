@@ -54,3 +54,37 @@ export async function setMemberPresent(id: string, present: boolean): Promise<vo
   const { error } = await supabase.from("business_members").update({ present }).eq("id", id);
   if (error) throw error;
 }
+
+export async function setMemberSalary(id: string, salary: number | null): Promise<void> {
+  const { error } = await supabase.from("business_members").update({ salary }).eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Peman salè (kreye depans nan Kontabilite otomatikman) ----------
+
+export type SalaryPaymentRow = Database["public"]["Tables"]["salary_payments"]["Row"];
+
+export type SalaryPaymentInput = {
+  member_id: string;
+  amount: number;
+  pay_date: string;
+  period_label: string | null;
+};
+
+export async function fetchSalaryPayments(businessId: string): Promise<SalaryPaymentRow[]> {
+  const { data, error } = await supabase
+    .from("salary_payments")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("pay_date", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function paySalary(businessId: string, input: SalaryPaymentInput): Promise<void> {
+  const { error } = await supabase.from("salary_payments").insert({
+    business_id: businessId,
+    ...input,
+  });
+  if (error) throw error;
+}
