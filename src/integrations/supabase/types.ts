@@ -530,6 +530,150 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_equity_entries: {
+        Row: {
+          id: string
+          business_id: string
+          kind: string
+          amount: number
+          entry_date: string
+          note: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          kind: string
+          amount: number
+          entry_date?: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          kind?: string
+          amount?: number
+          entry_date?: string
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      liabilities: {
+        Row: {
+          id: string
+          business_id: string
+          kind: string
+          creditor: string
+          amount: number
+          status: string
+          due_date: string | null
+          note: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          kind: string
+          creditor: string
+          amount: number
+          status?: string
+          due_date?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          kind?: string
+          creditor?: string
+          amount?: number
+          status?: string
+          due_date?: string | null
+          note?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payroll_runs: {
+        Row: {
+          id: string
+          business_id: string
+          period_label: string
+          period_start: string
+          period_end: string
+          status: string
+          total_amount: number
+          processed_at: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          period_label: string
+          period_start: string
+          period_end: string
+          status?: string
+          total_amount?: number
+          processed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          period_label?: string
+          period_start?: string
+          period_end?: string
+          status?: string
+          total_amount?: number
+          processed_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      payroll_run_items: {
+        Row: {
+          id: string
+          payroll_run_id: string
+          business_id: string
+          member_id: string | null
+          member_name: string
+          salary: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          payroll_run_id: string
+          business_id: string
+          member_id?: string | null
+          member_name: string
+          salary?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          payroll_run_id?: string
+          business_id?: string
+          member_id?: string | null
+          member_name?: string
+          salary?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       moncash_transactions: {
         Row: {
           id: string
@@ -1098,6 +1242,18 @@ export type Database = {
         }
         Relationships: []
       }
+      v_balance_sheet: {
+        Row: {
+          business_id: string | null
+          kach: number | null
+          kont_pou_resevwa: number | null
+          valè_estòk: number | null
+          pasif_total: number | null
+          kapital_enjekte: number | null
+          tirad_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_business_member: {
@@ -1111,6 +1267,19 @@ export type Database = {
       is_student_or_guardian: {
         Args: { p_student_id: string }
         Returns: boolean
+      }
+      create_payroll_run: {
+        Args: {
+          p_business_id: string
+          p_period_label: string
+          p_period_start: string
+          p_period_end: string
+        }
+        Returns: string
+      }
+      process_payroll_run: {
+        Args: { p_run_id: string }
+        Returns: undefined
       }
     }
     Enums: {
