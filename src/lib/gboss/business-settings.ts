@@ -44,3 +44,42 @@ export async function uploadBusinessLogo(businessId: string, file: File): Promis
   if (updateError) throw updateError;
   return data.publicUrl;
 }
+
+// ---------- Ajoute yon 2yèm biznis (Biznis oswa Institisyon) ----------
+
+export type AccountType = "biznis" | "institisyon";
+
+export type NewBusinessInput = {
+  accountType: AccountType;
+  name: string;
+  sector: string;
+  plan: PlanId;
+};
+
+export async function createSecondBusiness(input: NewBusinessInput): Promise<string> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const user = sessionData.session?.user;
+  if (!user) throw new Error("Session ekspire — rekonekte epi eseye ankò.");
+
+  const trialEndsAt = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .insert({
+      owner_id: user.id,
+      name: input.name.trim(),
+      sector: input.accountType === "institisyon" ? "Éducation" : input.sector,
+      plan: input.plan,
+      pos_enabled: input.accountType === "biznis",
+      stock_enabled: input.accountType === "biznis",
+      school_addon: input.accountType === "institisyon",
+      status: "essai",
+      trial_ends_at: trialEndsAt,
+      email: user.email ?? "",
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  return data.id;
+}

@@ -34,20 +34,39 @@ import {
   MULTI_BUSINESS_SURCHARGE,
   OFFLINE_GRACE_DAYS,
   PLANS,
+  SECTORS,
   TRIAL_DAYS,
   money,
   planPrice,
   type PlanId,
 } from "@/lib/gboss/data";
 import {
+  createSecondBusiness,
   updateBusinessSettings,
   updateBusinessProfile,
   uploadBusinessLogo,
+  type AccountType,
 } from "@/lib/gboss/business-settings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/paramet")({
@@ -301,6 +320,48 @@ function Settings() {
       toast.error(err instanceof Error ? err.message : "Erreur pandan anrejistreman an");
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  // ---------- Ajoute yon 2yèm biznis ----------
+  const [addBizOpen, setAddBizOpen] = useState(false);
+  const [newAccountType, setNewAccountType] = useState<AccountType>("biznis");
+  const [newName, setNewName] = useState("");
+  const [newSector, setNewSector] = useState<string>(SECTORS[0]);
+  const [newPlan, setNewPlan] = useState<Exclude<PlanId, "kanpis">>("esansyel");
+  const [creatingBiz, setCreatingBiz] = useState(false);
+
+  async function handleCreateBusiness() {
+    if (!newName.trim()) {
+      toast.error("Antre non biznis/institisyon an.");
+      return;
+    }
+    setCreatingBiz(true);
+    try {
+      const newId = await createSecondBusiness({
+        accountType: newAccountType,
+        name: newName,
+        sector: newSector,
+        plan: newAccountType === "institisyon" ? "kanpis" : newPlan,
+      });
+      await refreshBusinesses();
+      toast.success(
+        newAccountType === "institisyon"
+          ? "Institisyon kreye — 8 jou eseye gratis kòmanse"
+          : "Biznis kreye — 8 jou eseye gratis kòmanse",
+      );
+      setAddBizOpen(false);
+      setNewName("");
+      setNewAccountType("biznis");
+      setNewPlan("esansyel");
+      setNewSector(SECTORS[0]);
+      // Pa gen aksè dirèk pou chanje bizId isit la san yon rechajman lis,
+      // men refreshBusinesses deja mete l nan lis "Mes business" la.
+      void newId;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erè pandan kreyasyon an");
+    } finally {
+      setCreatingBiz(false);
     }
   }
 
@@ -704,16 +765,110 @@ function Settings() {
               </div>
             ))}
           </div>
-          <Button
-            variant="outline"
-            className="mt-3 w-full gap-2"
-            disabled={businesses.length >= MAX_BUSINESSES}
-          >
-            <Plus className="size-4" />
-            {businesses.length >= MAX_BUSINESSES
-              ? "Limite de 2 business atteinte"
-              : "Ajouter un business (+30%)"}
-          </Button>
+          <Dialog open={addBizOpen} onOpenChange={setAddBizOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="mt-3 w-full gap-2"
+                disabled={businesses.length >= MAX_BUSINESSES}
+              >
+                <Plus className="size-4" />
+                {businesses.length >= MAX_BUSINESSES
+                  ? "Limite de 2 business atteinte"
+                  : "Ajouter un business (+30%)"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Nouvo biznis</DialogTitle>
+                <DialogDescription>
+                  Done li yo ap rete separe nèt de premye biznis ou a. +30% ap ajoute sou abònman ou.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Kalite kont</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewAccountType("biznis")}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        newAccountType === "biznis"
+                          ? "border-accent bg-accent/5"
+                          : "border-border hover:border-accent/40",
+                      )}
+                    >
+                      Biznis
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewAccountType("institisyon")}
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
+                        newAccountType === "institisyon"
+                          ? "border-accent bg-accent/5"
+                          : "border-border hover:border-accent/40",
+                      )}
+                    >
+                      Institisyon (lekòl)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="nb-name">{newAccountType === "institisyon" ? "Non institisyon an" : "Non biznis la"}</Label>
+                  <Input id="nb-name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                </div>
+
+                {newAccountType === "biznis" ? (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label>Sektè</Label>
+                      <Select value={newSector} onValueChange={setNewSector}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SECTORS.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {s}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Plan</Label>
+                      <Select value={newPlan} onValueChange={(v) => setNewPlan(v as Exclude<PlanId, "kanpis">)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="esansyel">{PLANS.esansyel.name} — {PLANS.esansyel.price} HTG/mois</SelectItem>
+                          <SelectItem value="estanda">{PLANS.estanda.name} — {PLANS.estanda.price} HTG/mois</SelectItem>
+                          <SelectItem value="premyom">{PLANS.premyom.name} — {PLANS.premyom.price} HTG/mois</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                ) : (
+                  <p className="rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+                    Plan {PLANS.kanpis.name} ({PLANS.kanpis.price} HTG/mois/élève) ap aplike otomatikman. Ou ka mete
+                    kantite elèv yo apre nan Paramèt biznis sa a.
+                  </p>
+                )}
+
+                <p className="text-xs text-muted-foreground">8 jou eseye gratis kòmanse kounye a — pa gen okenn peman kounye a.</p>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleCreateBusiness} disabled={creatingBiz}>
+                  {creatingBiz ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Kreye
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <p className="mt-2 text-xs text-muted-foreground">
             <Percent className="mr-1 inline size-3.5" />
             Les données de chaque business restent strictement séparées.
