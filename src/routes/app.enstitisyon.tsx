@@ -1,13 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Loader2, Plus, Receipt, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, CalendarCheck, GraduationCap, Loader2, Plus, Receipt, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
 import { KpiCard, PageHeader, Panel, ProgressBar, StatusPill } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +48,16 @@ import {
   type StudentRow,
   type StudentStatus,
 } from "@/lib/gboss/students";
+import {
+  createGrade,
+  deleteGrade,
+  fetchAttendanceForDate,
+  fetchGrades,
+  saveAttendanceBatch,
+  type AttendanceMark,
+  type GradeInput,
+  type GradeRow,
+} from "@/lib/gboss/student-records";
 
 export const Route = createFileRoute("/app/enstitisyon")({
   head: () => ({
@@ -133,6 +151,83 @@ function School() {
     onError: (err: Error) => toast.error(err.message || "Erreur pandan peman an"),
   });
 
+  // ---------- Nòt ----------
+  const gradesQuery = useQuery({ queryKey: ["grades", biz.id], queryFn: () => fetchGrades(biz.id) });
+  const grades = gradesQuery.data ?? [];
+
+  const [gradeOpen, setGradeOpen] = useState(false);
+  const EMPTY_GRADE: GradeInput = { student_id: "", subject: "", period: "", grade: 0, max_grade: 20, comment: null };
+  const [gradeForm, setGradeForm] = useState<GradeInput>(EMPTY_GRADE);
+  const [deleteGradeTarget, setDeleteGradeTarget] = useState<GradeRow | null>(null);
+
+  const createGradeMutation = useMutation({
+    mutationFn: async () => {
+      if (!gradeForm.student_id) throw new Error("Chwazi yon elèv.");
+      if (!gradeForm.subject.trim()) throw new Error("Antre matyè a.");
+      if (!gradeForm.period.trim()) throw new Error("Antre peryòd la.");
+      if (gradeForm.max_grade <= 0) throw new Error("Nòt maksimòm dwe pi gran pase 0.");
+      await createGrade(biz.id, gradeForm);
+    },
+    onSuccess: () => {
+      toast.success("Nòt anrejistre — mwayèn elèv la mete ajou otomatikman");
+      setGradeOpen(false);
+      setGradeForm(EMPTY_GRADE);
+      queryClient.invalidateQueries({ queryKey: ["grades", biz.id] });
+      queryClient.invalidateQueries({ queryKey: ["students", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
+  const deleteGradeMutation = useMutation({
+    mutationFn: async (id: string) => deleteGrade(id),
+    onSuccess: () => {
+      toast.success("Nòt efase");
+      setDeleteGradeTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["grades", biz.id] });
+      queryClient.invalidateQueries({ queryKey: ["students", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
+  // ---------- Prezans ----------
+  const [attDate, setAttDate] = useState(new Date().toISOString().slice(0, 10));
+  const [attClassroom, setAttClassroom] = useState<string>("__all");
+  const attendanceForDateQuery = useQuery({
+    queryKey: ["attendance-date", biz.id, attDate],
+    queryFn: () => fetchAttendanceForDate(biz.id, attDate),
+  });
+  const attendanceToday = attendanceForDateQuery.data ?? [];
+  const [marks, setMarks] = useState<Record<string, boolean>>({});
+
+  const studentsInScope = useMemo(
+    () => (attClassroom === "__all" ? students : students.filter((s) => s.classroom === attClassroom)),
+    [students, attClassroom],
+  );
+
+  function isPresent(studentId: string): boolean {
+    if (studentId in marks) return marks[studentId] ?? true;
+    const existing = attendanceToday.find((a) => a.student_id === studentId);
+    return existing ? existing.present : true;
+  }
+
+  const saveAttendanceMutation = useMutation({
+    mutationFn: async () => {
+      const batch: AttendanceMark[] = studentsInScope.map((s) => ({
+        student_id: s.id,
+        present: isPresent(s.id),
+        note: null,
+      }));
+      await saveAttendanceBatch(biz.id, attDate, batch);
+    },
+    onSuccess: () => {
+      toast.success("Prezans anrejistre — pousantaj elèv yo mete ajou otomatikman");
+      setMarks({});
+      queryClient.invalidateQueries({ queryKey: ["attendance-date", biz.id, attDate] });
+      queryClient.invalidateQueries({ queryKey: ["students", biz.id] });
+    },
+    onError: (err: Error) => toast.error(err.message || "Erreur"),
+  });
+
   return (
     <div>
       <PageHeader
@@ -191,7 +286,16 @@ function School() {
         <KpiCard label="Facturation mensuelle" value={money(billing, "HTG")} tone="orange" />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-4">
+        <Tabs defaultValue="eleves">
+          <TabsList>
+            <TabsTrigger value="eleves">Élèves</TabsTrigger>
+            <TabsTrigger value="notes">Nòt</TabsTrigger>
+            <TabsTrigger value="presences">Prezans</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="eleves" className="mt-4">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Élèves" className="lg:col-span-2">
           {studentsQuery.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
@@ -329,6 +433,204 @@ function School() {
           </div>
         )}
       </Panel>
+          </TabsContent>
+
+          <TabsContent value="notes" className="mt-4">
+            <Panel
+              title="Nòt"
+              action={
+                <Dialog open={gradeOpen} onOpenChange={setGradeOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="size-4" /> Nouvo nòt
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Ajoute yon nòt</DialogTitle>
+                      <DialogDescription>Mwayèn elèv la ap kalkile otomatikman apre sa.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <Label>Elèv</Label>
+                        <Select
+                          value={gradeForm.student_id}
+                          onValueChange={(v) => setGradeForm((f) => ({ ...f, student_id: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chwazi yon elèv" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {students.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="g-subject">Matyè</Label>
+                          <Input
+                            id="g-subject"
+                            value={gradeForm.subject}
+                            onChange={(e) => setGradeForm((f) => ({ ...f, subject: e.target.value }))}
+                            placeholder="Ex: Matematik"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="g-period">Peryòd</Label>
+                          <Input
+                            id="g-period"
+                            value={gradeForm.period}
+                            onChange={(e) => setGradeForm((f) => ({ ...f, period: e.target.value }))}
+                            placeholder="Ex: Trimès 1"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="g-grade">Nòt</Label>
+                          <Input
+                            id="g-grade"
+                            type="number"
+                            min={0}
+                            value={gradeForm.grade}
+                            onChange={(e) => setGradeForm((f) => ({ ...f, grade: Number(e.target.value) || 0 }))}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="g-max">Sou</Label>
+                          <Input
+                            id="g-max"
+                            type="number"
+                            min={1}
+                            value={gradeForm.max_grade}
+                            onChange={(e) => setGradeForm((f) => ({ ...f, max_grade: Number(e.target.value) || 20 }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="g-comment">Komantè (opsyonèl)</Label>
+                        <Input
+                          id="g-comment"
+                          value={gradeForm.comment ?? ""}
+                          onChange={(e) => setGradeForm((f) => ({ ...f, comment: e.target.value || null }))}
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => createGradeMutation.mutate()} disabled={createGradeMutation.isPending}>
+                        {createGradeMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                        Anrejistre
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              }
+            >
+              {gradesQuery.isLoading ? (
+                <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" /> Chajman...
+                </div>
+              ) : grades.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">Okenn nòt anrejistre ankò.</p>
+              ) : (
+                <div className="space-y-2">
+                  {grades.map((g) => {
+                    const st = students.find((s) => s.id === g.student_id);
+                    return (
+                      <div key={g.id} className="flex items-center gap-3 rounded-lg bg-secondary px-3 py-2 text-sm">
+                        <BookOpen className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate">
+                          <span className="font-medium">{st?.name ?? "Elèv"}</span>
+                          <span className="text-muted-foreground"> · {g.subject} · {g.period}</span>
+                        </span>
+                        <span className="gb-num font-semibold">
+                          {g.grade}/{g.max_grade}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setDeleteGradeTarget(g)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Panel>
+          </TabsContent>
+
+          <TabsContent value="presences" className="mt-4">
+            <Panel
+              title="Prezans"
+              action={
+                <div className="flex items-center gap-2">
+                  <Select value={attClassroom} onValueChange={setAttClassroom}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all">Tout klas</SelectItem>
+                      {classrooms.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="date"
+                    value={attDate}
+                    onChange={(e) => {
+                      setAttDate(e.target.value);
+                      setMarks({});
+                    }}
+                    className="w-40"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => saveAttendanceMutation.mutate()}
+                    disabled={saveAttendanceMutation.isPending || studentsInScope.length === 0}
+                  >
+                    {saveAttendanceMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+                    Anrejistre
+                  </Button>
+                </div>
+              }
+            >
+              {studentsInScope.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">Okenn elèv nan klas sa a.</p>
+              ) : (
+                <div className="space-y-2">
+                  {studentsInScope.map((s) => {
+                    const present = isPresent(s.id);
+                    return (
+                      <div key={s.id} className="flex items-center gap-3 rounded-lg bg-secondary px-3 py-2 text-sm">
+                        <CalendarCheck className="size-4 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate font-medium">{s.name}</span>
+                        <span className="gb-num text-xs text-muted-foreground">{s.classroom ?? "Sans classe"}</span>
+                        <Button
+                          size="sm"
+                          variant={present ? "outline" : "destructive"}
+                          onClick={() => setMarks((m) => ({ ...m, [s.id]: !present }))}
+                        >
+                          {present ? "Prezan" : "Absan"}
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Panel>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
@@ -343,6 +645,23 @@ function School() {
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
             >
               Retirer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={!!deleteGradeTarget} onOpenChange={(v) => !v && setDeleteGradeTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Efase nòt sa a?</AlertDialogTitle>
+            <AlertDialogDescription>Aksyon sa a pa ka anile.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annile</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteGradeTarget && deleteGradeMutation.mutate(deleteGradeTarget.id)}
+            >
+              Efase
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
