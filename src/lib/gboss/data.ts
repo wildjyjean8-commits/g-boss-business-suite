@@ -15,7 +15,7 @@ export const PLANS: Record<PlanId, { name: string; price: number; unit: string; 
 };
 
 export const HOTEL_ADDON_PRICE = 1000;
-export const MULTI_BUSINESS_SURCHARGE = 0.3; // +30% pour 2 business
+export const MULTI_BUSINESS_DISCOUNT = 0.3; // -30% rabè sou pri 2yèm biznis/institisyon an
 export const MAX_BUSINESSES = 2;
 export const TRIAL_DAYS = 8;
 export const OFFLINE_GRACE_DAYS = 7;
@@ -303,7 +303,7 @@ export function getBusiness(id: string): Business {
 
 export function planPrice(plan: PlanId, businesses: number, hotelAddon: boolean, students = 0) {
   const base = plan === "kanpis" ? PLANS.kanpis.price * students : PLANS[plan].price;
-  const multi = businesses > 1 ? base * (1 + MULTI_BUSINESS_SURCHARGE) : base;
+  const multi = businesses > 1 ? base * (1 - MULTI_BUSINESS_DISCOUNT) : base;
   return Math.round(multi + (hotelAddon ? HOTEL_ADDON_PRICE : 0));
 }
 

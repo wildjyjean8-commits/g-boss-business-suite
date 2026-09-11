@@ -300,7 +300,7 @@ function SuperAdmin() {
             label="Business gérés"
             value={String(metrics.businesses)}
             tone="purple"
-            hint="Max 2 par compte (+30%)"
+            hint="Max 2 par compte (-30% sur le 2e)"
             icon={<Building2 className="size-4" />}
           />
           <KpiCard

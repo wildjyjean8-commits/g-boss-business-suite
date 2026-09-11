@@ -31,7 +31,7 @@ import {
 import {
   HOTEL_ADDON_PRICE,
   MAX_BUSINESSES,
-  MULTI_BUSINESS_SURCHARGE,
+  MULTI_BUSINESS_DISCOUNT,
   OFFLINE_GRACE_DAYS,
   PLANS,
   SECTORS,
@@ -412,7 +412,7 @@ function Settings() {
           value={`${businesses.length} / ${MAX_BUSINESSES}`}
           tone="blue"
           icon={<Building2 className="size-4" />}
-          hint={`Surcharge +${MULTI_BUSINESS_SURCHARGE * 100}% dès le 2e`}
+          hint={`Rabè -${MULTI_BUSINESS_DISCOUNT * 100}% sou 2yèm biznis la`}
         />
         <KpiCard
           label="Essai gratuit"
@@ -709,8 +709,8 @@ function Settings() {
             </div>
             {businesses.length > 1 ? (
               <div className="flex justify-between">
-                <dt className="text-muted-foreground">2e business (+30%)</dt>
-                <dd className="gb-num">{money(base * MULTI_BUSINESS_SURCHARGE, "HTG")}</dd>
+                <dt className="text-muted-foreground">Rabè 2e business (-30%)</dt>
+                <dd className="gb-num text-kpi-green">−{money(base * MULTI_BUSINESS_DISCOUNT, "HTG")}</dd>
               </div>
             ) : null}
             {hotelAddon ? (
@@ -775,14 +775,14 @@ function Settings() {
                 <Plus className="size-4" />
                 {businesses.length >= MAX_BUSINESSES
                   ? "Limite de 2 business atteinte"
-                  : "Ajouter un business (+30%)"}
+                  : "Ajouter un business (-30%)"}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Nouvo biznis</DialogTitle>
                 <DialogDescription>
-                  Done li yo ap rete separe nèt de premye biznis ou a. +30% ap ajoute sou abònman ou.
+                  Done li yo ap rete separe nèt de premye biznis ou a. Ou benefisye -30% rabè sou pri plan nouvo antite a.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
@@ -845,17 +845,24 @@ function Settings() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="esansyel">{PLANS.esansyel.name} — {PLANS.esansyel.price} HTG/mois</SelectItem>
-                          <SelectItem value="estanda">{PLANS.estanda.name} — {PLANS.estanda.price} HTG/mois</SelectItem>
-                          <SelectItem value="premyom">{PLANS.premyom.name} — {PLANS.premyom.price} HTG/mois</SelectItem>
+                          <SelectItem value="esansyel">
+                            {PLANS.esansyel.name} — {money(PLANS.esansyel.price * (1 - MULTI_BUSINESS_DISCOUNT), "HTG")}/mois
+                          </SelectItem>
+                          <SelectItem value="estanda">
+                            {PLANS.estanda.name} — {money(PLANS.estanda.price * (1 - MULTI_BUSINESS_DISCOUNT), "HTG")}/mois
+                          </SelectItem>
+                          <SelectItem value="premyom">
+                            {PLANS.premyom.name} — {money(PLANS.premyom.price * (1 - MULTI_BUSINESS_DISCOUNT), "HTG")}/mois
+                          </SelectItem>
                         </SelectContent>
                       </Select>
+                      <p className="text-[11px] text-muted-foreground">Rabè -30% deja aplike sou pri afiche a.</p>
                     </div>
                   </>
                 ) : (
                   <p className="rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
-                    Plan {PLANS.kanpis.name} ({PLANS.kanpis.price} HTG/mois/élève) ap aplike otomatikman. Ou ka mete
-                    kantite elèv yo apre nan Paramèt biznis sa a.
+                    Plan {PLANS.kanpis.name} ({money(PLANS.kanpis.price * (1 - MULTI_BUSINESS_DISCOUNT), "HTG")}/mois/élève
+                    apre rabè -30%) ap aplike otomatikman. Ou ka mete kantite elèv yo apre nan Paramèt biznis sa a.
                   </p>
                 )}
 

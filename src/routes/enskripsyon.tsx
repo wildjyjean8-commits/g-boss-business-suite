@@ -431,7 +431,7 @@ function SignupPage() {
                 <div className="gb-card space-y-4 p-4">
                   <Row
                     title={`Gérer 2 business sous ce compte (max ${MAX_BUSINESSES})`}
-                    text="Données strictement séparées · +30% sur le plan choisi"
+                    text="Données strictement séparées · -30% sur le 2e plan"
                     checked={businesses === 2}
                     onChange={(v) => setBusinesses(v ? 2 : 1)}
                   />
@@ -598,7 +598,7 @@ function SignupPage() {
                 <dl className="divide-y divide-border text-sm">
                   <SummaryRow label="Type de compte" value={accountType === "biznis" ? "Biznis" : `Institisyon (${schoolKind === "klasik" ? "Lekòl Klasik" : "Lekòl Pwofesyonèl"})`} />
                   <SummaryRow label="Plan" value={PLANS[effectivePlan].name} />
-                  <SummaryRow label="Business gérés" value={`${businesses} ${businesses > 1 ? "(+30%)" : ""}`} />
+                  <SummaryRow label="Business gérés" value={`${businesses} ${businesses > 1 ? "(-30% sur le 2e)" : ""}`} />
                   <SummaryRow label="Add-on Airbnb & Hôtel" value={hotelAddon ? `Oui (${HOTEL_ADDON_PRICE} HTG)` : "Non"} />
                   <SummaryRow label="Secteur" value={effectiveSector} />
                   <SummaryRow label="Kès/Vant" value={posEnabled ? "Oui" : "Non"} />

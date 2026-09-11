@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { supabaseAdmin as SupabaseAdminType } from "@/integrations/supabase/client.server";
-import { PLANS, MULTI_BUSINESS_SURCHARGE, HOTEL_ADDON_PRICE, type PlanId } from "@/lib/gboss/data";
+import { PLANS, MULTI_BUSINESS_DISCOUNT, HOTEL_ADDON_PRICE, type PlanId } from "@/lib/gboss/data";
 
 async function requireOwnedBusiness(businessId: string, userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -59,7 +59,7 @@ async function computeSubscriptionAmount(
     base = PLANS[plan].price;
   }
 
-  const multi = (ownedCount ?? 1) > 1 ? base * (1 + MULTI_BUSINESS_SURCHARGE) : base;
+  const multi = (ownedCount ?? 1) > 1 ? base * (1 - MULTI_BUSINESS_DISCOUNT) : base;
   return Math.round(multi + (biz.hotel_addon ? HOTEL_ADDON_PRICE : 0));
 }
 

@@ -120,7 +120,7 @@ function Landing() {
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
           Add-on « Airbnb and Hotel » : {HOTEL_ADDON_PRICE} HTG/mois · 2 business sous un même compte :
-          +30% sur le plan choisi.
+          -30% sur le 2e plan.
         </p>
       </section>
     </div>

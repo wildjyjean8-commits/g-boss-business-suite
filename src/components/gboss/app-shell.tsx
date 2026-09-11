@@ -151,7 +151,7 @@ function BizSwitcher() {
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem disabled className="text-xs">
-            Données strictement séparées · +30% sur le plan
+            Données strictement séparées · -30% sur le 2e plan
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
