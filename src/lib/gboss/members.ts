@@ -4,6 +4,12 @@ import type { Database } from "@/integrations/supabase/types";
 export type MemberRow = Database["public"]["Tables"]["business_members"]["Row"];
 export type PerformanceRow = Database["public"]["Views"]["v_employee_performance"]["Row"];
 
+export async function linkTeamMemberByCode(code: string): Promise<string> {
+  const { data, error } = await supabase.rpc("link_team_member_by_code", { p_code: code });
+  if (error) throw error;
+  return data as string;
+}
+
 export type MemberInput = {
   name: string;
   role: string;

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { Business } from "@/lib/gboss/data";
-import { ensureOwnedBusiness } from "@/lib/gboss/real-business";
+import { ensureOwnedBusiness, fetchMemberBusinesses } from "@/lib/gboss/real-business";
 import { supabase } from "@/integrations/supabase/client";
 
 type Ctx = {
@@ -10,6 +10,8 @@ type Ctx = {
   bizId: string;
   setBizId: (id: string) => void;
   refreshBusinesses: () => Promise<void>;
+  myRole: string | null;
+  isOwner: boolean;
 };
 
 const BizContext = createContext<Ctx | null>(null);
@@ -18,16 +20,27 @@ export function BizProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[] | null>(null);
   const [bizId, setBizId] = useState<string | null>(null);
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set());
+  const [roleByBusiness, setRoleByBusiness] = useState<Record<string, string>>({});
   const [failed, setFailed] = useState(false);
 
   async function load(active: () => boolean) {
     const { data } = await supabase.auth.getSession();
     const user = data.session?.user;
-    const owned = user ? await ensureOwnedBusiness(user.id, user) : [];
+
+    if (!user) {
+      if (active()) setFailed(true);
+      return;
+    }
+
+    const memberEntries = await fetchMemberBusinesses(user.id);
+    const owned = await ensureOwnedBusiness(user.id, user);
 
     if (!active()) return;
 
-    if (owned.length === 0) {
+    const merged = [...owned, ...memberEntries.map((e) => e.business).filter((b) => !owned.some((o) => o.id === b.id))];
+
+    if (merged.length === 0) {
       // Pa gen okenn done fiktif nan repli — si vrèman pa gen biznis mare ak
       // kont lan (menm apre tantativ rekiperasyon otomatik), voye itilizatè a
       // fini enskripsyon an olye montre chif envante.
@@ -35,8 +48,15 @@ export function BizProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    setBusinesses(owned);
-    setBizId((prev) => (prev && owned.some((b) => b.id === prev) ? prev : owned[0]!.id));
+    const roles: Record<string, string> = {};
+    memberEntries.forEach((e) => {
+      roles[e.business.id] = e.role;
+    });
+
+    setBusinesses(merged);
+    setOwnedIds(new Set(owned.map((b) => b.id)));
+    setRoleByBusiness(roles);
+    setBizId((prev) => (prev && merged.some((b) => b.id === prev) ? prev : merged[0]!.id));
   }
 
   useEffect(() => {
@@ -55,8 +75,10 @@ export function BizProvider({ children }: { children: ReactNode }) {
       bizId,
       setBizId,
       refreshBusinesses: () => load(() => true),
+      isOwner: ownedIds.has(bizId),
+      myRole: ownedIds.has(bizId) ? null : (roleByBusiness[bizId] ?? null),
     };
-  }, [businesses, bizId]);
+  }, [businesses, bizId, ownedIds, roleByBusiness]);
 
   if (failed) {
     return (
@@ -65,15 +87,24 @@ export function BizProvider({ children }: { children: ReactNode }) {
           Nou pa jwenn biznis mare ak kont ou a
         </p>
         <p className="max-w-sm text-sm text-muted-foreground">
-          Fòk ou fini kreye biznis ou a anvan ou ka antre nan espas travay la.
+          Fòk ou fini kreye biznis ou a, oswa antre kòd aksè ekip ou resevwa a.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/enskripsyon" })}
-          className="mt-2 rounded-md bg-[#3721FF] px-4 py-2 text-sm font-semibold text-white"
-        >
-          Fini kreye biznis mwen an
-        </button>
+        <div className="mt-1 flex gap-2">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/enskripsyon" })}
+            className="rounded-md bg-[#3721FF] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Fini kreye biznis mwen an
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/koneksyon-ekip" })}
+            className="rounded-md border border-border px-4 py-2 text-sm font-semibold"
+          >
+            Mwen se yon manm ekip
+          </button>
+        </div>
       </div>
     );
   }

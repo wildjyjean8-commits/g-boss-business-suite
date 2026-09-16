@@ -35,7 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PLANS, money } from "@/lib/gboss/data";
+import { PLANS, FEE_CATEGORIES, money } from "@/lib/gboss/data";
 import {
   createStudent,
   createStudentPayment,
@@ -129,7 +129,8 @@ function School() {
 
   const [payTarget, setPayTarget] = useState<StudentRow | null>(null);
   const EMPTY_PAYMENT: Omit<StudentPaymentInput, "student_id"> = {
-    label: "Frè eskolarite",
+    label: "",
+    category: "ekolaj",
     amount_due: 0,
     amount_paid: 0,
     due_date: null,
@@ -317,6 +318,17 @@ function School() {
                       </p>
                     </div>
                     <span className="gb-num text-sm font-semibold">{s.average !== null ? `${s.average.toFixed(1)}/20` : "—"}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(s.access_code ?? "");
+                        toast.success(`Kòd ${s.access_code} kopye — pou paran/elèv nan pòtay-paran`);
+                      }}
+                      className="gb-num rounded-md bg-secondary px-2 py-1 font-mono text-xs font-semibold tracking-wider hover:bg-secondary/70"
+                      title="Kopye kòd aksè pou paran/elèv"
+                    >
+                      {s.access_code ?? "—"}
+                    </button>
                     <StatusPill tone={s.status === "actif" ? "ok" : "crit"}>
                       {s.status === "actif" ? "Actif" : "Restreint"}
                     </StatusPill>
@@ -389,8 +401,28 @@ function School() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="pf-label">Rezon</Label>
-              <Input id="pf-label" value={payForm.label} onChange={(e) => setPayForm((f) => ({ ...f, label: e.target.value }))} />
+              <Label>Kategori</Label>
+              <Select value={payForm.category} onValueChange={(v) => setPayForm((f) => ({ ...f, category: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {FEE_CATEGORIES.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pf-label">Nòt (opsyonèl)</Label>
+              <Input
+                id="pf-label"
+                value={payForm.label}
+                onChange={(e) => setPayForm((f) => ({ ...f, label: e.target.value }))}
+                placeholder="Ex: Janvye 2027"
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -412,27 +444,50 @@ function School() {
         </DialogContent>
       </Dialog>
 
-      <Panel title="Dènye peman eskolarite (Kontabilite)" className="mt-4">
-        {payments.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">Pa gen peman anrejistre ankò.</p>
-        ) : (
-          <div className="space-y-2.5">
-            {payments.slice(0, 8).map((p) => {
-              const st = students.find((s) => s.id === p.student_id);
-              return (
-                <div key={p.id} className="flex items-center gap-2 text-sm">
-                  <Receipt className="size-4 shrink-0 text-kpi-orange" />
-                  <span className="min-w-0 flex-1 truncate">
-                    {st?.name ?? "Elèv"} · {p.label}
-                  </span>
-                  <StatusPill tone={p.status === "paye" ? "ok" : p.status === "pasyèl" ? "low" : "crit"}>{p.status}</StatusPill>
-                  <span className="gb-num font-semibold">{money(p.amount_paid, biz.currency)}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Panel>
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <Panel title="Dènye peman eskolarite (Kontabilite)" className="lg:col-span-2">
+          {payments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Pa gen peman anrejistre ankò.</p>
+          ) : (
+            <div className="space-y-2.5">
+              {payments.slice(0, 8).map((p) => {
+                const st = students.find((s) => s.id === p.student_id);
+                const catLabel = FEE_CATEGORIES.find((c) => c.id === p.category)?.label ?? p.category;
+                return (
+                  <div key={p.id} className="flex items-center gap-2 text-sm">
+                    <Receipt className="size-4 shrink-0 text-kpi-orange" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {st?.name ?? "Elèv"} · {catLabel}
+                      {p.label ? ` · ${p.label}` : ""}
+                    </span>
+                    <StatusPill tone={p.status === "paye" ? "ok" : p.status === "pasyèl" ? "low" : "crit"}>{p.status}</StatusPill>
+                    <span className="gb-num font-semibold">{money(p.amount_paid, biz.currency)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Rezime pa Kategori">
+          {payments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">Okenn done.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {FEE_CATEGORIES.map((c) => {
+                const total = payments.filter((p) => p.category === c.id).reduce((sum, p) => sum + p.amount_paid, 0);
+                if (total === 0) return null;
+                return (
+                  <li key={c.id} className="flex justify-between">
+                    <span className="text-muted-foreground">{c.label}</span>
+                    <span className="gb-num font-semibold">{money(total, biz.currency)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Panel>
+      </div>
           </TabsContent>
 
           <TabsContent value="notes" className="mt-4">

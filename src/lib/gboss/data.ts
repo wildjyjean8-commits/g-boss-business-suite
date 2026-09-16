@@ -51,7 +51,27 @@ export const ROLES = [
   "Vendeur/Caissier",
   "Comptable",
   "Professeur",
+  "Directeur/Directrice",
+  "Secrétaire",
 ] as const;
+
+// Wòl ki gen aksè limite (tout lòt wòl gen aksè konplè, tankou Admin/Owner)
+// Kle yo koresponn ak `key` nan NAV la (app-shell.tsx)
+export const ROLE_NAV_ALLOW: Record<string, string[]> = {
+  Professeur: ["dashboard", "school"],
+  Comptable: ["dashboard", "accounting", "reports"],
+};
+
+export const FEE_CATEGORIES = [
+  { id: "enskripsyon", label: "Enskripsyon" },
+  { id: "ekolaj", label: "Ekolaj" },
+  { id: "egzamen", label: "Egzamen" },
+  { id: "inifòm", label: "Inifòm" },
+  { id: "kantin", label: "Kantin" },
+  { id: "transpò", label: "Transpò" },
+  { id: "lòt", label: "Lòt" },
+] as const;
+export type FeeCategoryId = (typeof FEE_CATEGORIES)[number]["id"];
 
 export type Product = {
   id: string;

@@ -243,6 +243,21 @@ function Team() {
                           {e.role} · {e.department ?? "—"} · {e.phone ?? "—"}
                         </p>
                       </div>
+                      {e.user_id ? (
+                        <StatusPill tone="ok">Kont mare</StatusPill>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(e.access_code ?? "");
+                            toast.success(`Kòd ${e.access_code} kopye`);
+                          }}
+                          className="gb-num rounded-md bg-secondary px-2 py-1 font-mono text-xs font-semibold tracking-wider hover:bg-secondary/70"
+                          title="Kopye kòd aksè a pou bay anplwaye a"
+                        >
+                          {e.access_code ?? "—"}
+                        </button>
+                      )}
                       <StatusPill tone={e.present ? "ok" : "neutral"}>{e.present ? "Présent" : "Absent"}</StatusPill>
                       {!e.active ? <StatusPill tone="crit">Désactivé</StatusPill> : null}
                       <Button

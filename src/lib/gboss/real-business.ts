@@ -18,21 +18,8 @@ const EMPTY_WEEK: DayPoint[] = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
   orders: 0,
 }));
 
-export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> {
-  const { data, error } = await supabase
-    .from("businesses")
-    .select("*")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true });
-
-  if (error) {
-    console.error("[real-business] echèk chajman biznis yo", error);
-    return [];
-  }
-
-  if (!data || data.length === 0) return [];
-
-  return data.map((row): Business => ({
+function mapBusinessRow(row: any): Business {
+  return {
     id: row.id,
     name: row.name,
     sector: row.sector,
@@ -60,6 +47,52 @@ export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> 
     week: EMPTY_WEEK,
     units: [],
     students: [],
+  };
+}
+
+export async function fetchOwnedBusinesses(userId: string): Promise<Business[]> {
+  const { data, error } = await supabase
+    .from("businesses")
+    .select("*")
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[real-business] echèk chajman biznis yo", error);
+    return [];
+  }
+
+  if (!data || data.length === 0) return [];
+
+  return data.map(mapBusinessRow);
+}
+
+/**
+ * Biznis kote itilizatè a se yon MANM ekip (business_members.user_id) —
+ * pa pwopriyetè. Sa pèmèt yon anplwaye (Anseyan, Kontab, elatriye) konekte
+ * ak pwòp kont Supabase pa li epi wè sèlman biznis/institisyon li mare avè l.
+ */
+export async function fetchMemberBusinesses(
+  userId: string,
+): Promise<{ business: Business; role: string }[]> {
+  const { data: members, error: mErr } = await supabase
+    .from("business_members")
+    .select("business_id, role")
+    .eq("user_id", userId)
+    .eq("active", true);
+
+  if (mErr || !members || members.length === 0) return [];
+
+  const ids = [...new Set(members.map((m) => m.business_id))];
+  const { data: rows, error } = await supabase.from("businesses").select("*").in("id", ids);
+  if (error || !rows) {
+    console.error("[real-business] echèk chajman biznis manm yo", error);
+    return [];
+  }
+
+  return rows.map((row) => ({
+    business: mapBusinessRow(row),
+    role: members.find((m) => m.business_id === row.id)?.role ?? "",
   }));
 }
 

@@ -47,6 +47,7 @@ export type StudentPaymentRow = Database["public"]["Tables"]["student_payments"]
 export type StudentPaymentInput = {
   student_id: string;
   label: string;
+  category: string;
   amount_due: number;
   amount_paid: number;
   due_date: string | null;

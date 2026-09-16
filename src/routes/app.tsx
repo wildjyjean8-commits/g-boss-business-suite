@@ -1,6 +1,8 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { BizProvider } from "@/components/gboss/biz-context";
-import { AppShell } from "@/components/gboss/app-shell";
+import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { BizProvider, useBiz } from "@/components/gboss/biz-context";
+import { AppShell, NAV } from "@/components/gboss/app-shell";
+import { ROLE_NAV_ALLOW } from "@/lib/gboss/data";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/app")({
@@ -32,11 +34,28 @@ export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
+function RoleGuardedOutlet() {
+  const { myRole, isOwner } = useBiz();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const allow = !isOwner && myRole ? ROLE_NAV_ALLOW[myRole] : undefined;
+  const navItem = NAV.find((n) => n.to === pathname);
+  const blocked = !!allow && !!navItem && !allow.includes(navItem.key);
+
+  useEffect(() => {
+    if (blocked) navigate({ to: "/app" });
+  }, [blocked, pathname]);
+
+  if (blocked) return null;
+  return <Outlet />;
+}
+
 function AppLayout() {
   return (
     <BizProvider>
       <AppShell>
-        <Outlet />
+        <RoleGuardedOutlet />
       </AppShell>
     </BizProvider>
   );

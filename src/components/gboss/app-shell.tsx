@@ -24,7 +24,7 @@ import { LangSwitcher } from "./lang-switcher";
 import { KycStatusBadge, VerifiedBadge } from "./kyc-badge";
 import { useBiz } from "./biz-context";
 import { useI18n } from "@/lib/gboss/i18n";
-import { PLANS } from "@/lib/gboss/data";
+import { PLANS, ROLE_NAV_ALLOW } from "@/lib/gboss/data";
 import { useSession, signOut } from "@/lib/gboss/use-session";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,7 @@ type NavItem = {
   requires?: "pos" | "hotel" | "school";
 };
 
-const NAV: NavItem[] = [
+export const NAV: NavItem[] = [
   { to: "/app", key: "dashboard", icon: LayoutDashboard },
   { to: "/app/faktirasyon", key: "invoicing", icon: FileText },
   { to: "/app/estok", key: "stock", icon: Package },
@@ -63,11 +63,14 @@ const NAV: NavItem[] = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
-  const { biz } = useBiz();
+  const { biz, myRole, isOwner } = useBiz();
   const { isSuperAdmin } = useSession();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  const roleAllow = !isOwner && myRole ? ROLE_NAV_ALLOW[myRole] : undefined;
+
   const items = NAV.filter((item) => {
+    if (roleAllow && !roleAllow.includes(item.key)) return false;
     if (item.requires === "pos") return biz.posEnabled;
     if (item.requires === "hotel") return biz.hotelAddon;
     if (item.requires === "school") return biz.schoolAddon || biz.students.length > 0;

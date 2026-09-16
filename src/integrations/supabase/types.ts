@@ -158,6 +158,7 @@ export type Database = {
           salary: number | null
           active: boolean
           present: boolean
+          access_code: string | null
           created_at: string
           updated_at: string
         }
@@ -172,6 +173,7 @@ export type Database = {
           salary?: number | null
           active?: boolean
           present?: boolean
+          access_code?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -186,6 +188,7 @@ export type Database = {
           salary?: number | null
           active?: boolean
           present?: boolean
+          access_code?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -905,6 +908,7 @@ export type Database = {
           guardian: string | null
           guardian_user_id: string | null
           student_user_id: string | null
+          access_code: string | null
           created_at: string
           updated_at: string
         }
@@ -919,6 +923,7 @@ export type Database = {
           guardian?: string | null
           guardian_user_id?: string | null
           student_user_id?: string | null
+          access_code?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -933,6 +938,7 @@ export type Database = {
           guardian?: string | null
           guardian_user_id?: string | null
           student_user_id?: string | null
+          access_code?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -1016,6 +1022,7 @@ export type Database = {
           business_id: string
           student_id: string
           label: string
+          category: string
           amount_due: number
           amount_paid: number
           due_date: string | null
@@ -1029,6 +1036,7 @@ export type Database = {
           business_id: string
           student_id: string
           label: string
+          category?: string
           amount_due?: number
           amount_paid?: number
           due_date?: string | null
@@ -1042,6 +1050,7 @@ export type Database = {
           business_id?: string
           student_id?: string
           label?: string
+          category?: string
           amount_due?: number
           amount_paid?: number
           due_date?: string | null
@@ -1280,6 +1289,14 @@ export type Database = {
       process_payroll_run: {
         Args: { p_run_id: string }
         Returns: undefined
+      }
+      link_team_member_by_code: {
+        Args: { p_code: string }
+        Returns: string
+      }
+      link_guardian_by_code: {
+        Args: { p_code: string; p_role: string }
+        Returns: string
       }
     }
     Enums: {
