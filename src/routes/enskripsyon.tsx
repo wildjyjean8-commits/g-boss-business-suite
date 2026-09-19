@@ -282,6 +282,7 @@ function SignupPage() {
         pos_enabled: posEnabled,
         stock_enabled: stockEnabled,
         hotel_addon: hotelAddon,
+        school_addon: accountType === "institisyon",
         status: "essai",
         trial_ends_at: trialEndsAt,
         phone: phone.trim() || null,
