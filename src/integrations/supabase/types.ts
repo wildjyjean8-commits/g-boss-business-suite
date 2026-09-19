@@ -533,6 +533,36 @@ export type Database = {
         }
         Relationships: []
       }
+      calc_memos: {
+        Row: {
+          id: string
+          business_id: string
+          note: string | null
+          expression: string | null
+          result: number
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          note?: string | null
+          expression?: string | null
+          result: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          note?: string | null
+          expression?: string | null
+          result?: number
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       owner_equity_entries: {
         Row: {
           id: string

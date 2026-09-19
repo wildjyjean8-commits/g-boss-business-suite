@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { money, SECTOR_CATEGORIES } from "@/lib/gboss/data";
+import { Calculator } from "@/components/gboss/calculator";
 import {
   createProduct,
   deleteProduct,
@@ -316,13 +317,16 @@ function Stock() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="p-stock">Stock actuel</Label>
-              <Input
-                id="p-stock"
-                type="number"
-                min={0}
-                value={form.stock}
-                onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) || 0 }))}
-              />
+              <div className="flex gap-1.5">
+                <Input
+                  id="p-stock"
+                  type="number"
+                  min={0}
+                  value={form.stock}
+                  onChange={(e) => setForm((f) => ({ ...f, stock: Number(e.target.value) || 0 }))}
+                />
+                <Calculator onUseResult={(v) => setForm((f) => ({ ...f, stock: Math.round(v) }))} />
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="p-min">Stock minimum</Label>

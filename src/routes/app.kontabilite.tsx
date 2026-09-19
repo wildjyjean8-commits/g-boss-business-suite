@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { useBiz } from "@/components/gboss/biz-context";
+import { Calculator } from "@/components/gboss/calculator";
 import { KpiCard, PageHeader, Panel, StatusPill } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -493,13 +494,16 @@ function Accounting() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5">
                       <Label htmlFor="r-amount">Montant ({biz.currency})</Label>
-                      <Input
-                        id="r-amount"
-                        type="number"
-                        min={0}
-                        value={receiptForm.amount}
-                        onChange={(e) => setReceiptForm((f) => ({ ...f, amount: Number(e.target.value) || 0 }))}
-                      />
+                      <div className="flex gap-1.5">
+                        <Input
+                          id="r-amount"
+                          type="number"
+                          min={0}
+                          value={receiptForm.amount}
+                          onChange={(e) => setReceiptForm((f) => ({ ...f, amount: Number(e.target.value) || 0 }))}
+                        />
+                        <Calculator onUseResult={(v) => setReceiptForm((f) => ({ ...f, amount: v }))} />
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="r-date">Date</Label>

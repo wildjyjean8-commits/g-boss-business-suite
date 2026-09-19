@@ -64,7 +64,16 @@ function Pos() {
   const subtotal = lines.reduce((s, l) => s + l.product.price * l.qty, 0);
   const tax = subtotal * (biz.taxRate / 100);
 
-  const add = (id: string) => setCart((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+  const add = (id: string) =>
+    setCart((c) => {
+      const product = products.find((p) => p.id === id);
+      const current = c[id] ?? 0;
+      if (product && current >= product.stock) {
+        toast.error(`Sèlman ${product.stock} ${product.name} ki disponib nan stock`);
+        return c;
+      }
+      return { ...c, [id]: current + 1 };
+    });
   const remove = (id: string) =>
     setCart((c) => {
       const next = { ...c };
@@ -151,18 +160,21 @@ function Pos() {
             </p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => add(p.id)}
-                  disabled={p.stock <= 0}
-                  className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
-                >
-                  <p className="truncate text-sm font-semibold">{p.name}</p>
-                  <p className="gb-num mt-1 text-sm text-accent">{money(p.price, biz.currency)}</p>
-                  <p className="gb-num text-xs text-muted-foreground">stock {p.stock}</p>
-                </button>
-              ))}
+              {products.map((p) => {
+                const inCart = cart[p.id] ?? 0;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => add(p.id)}
+                    disabled={p.stock <= 0 || inCart >= p.stock}
+                    className="rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-accent disabled:opacity-50"
+                  >
+                    <p className="truncate text-sm font-semibold">{p.name}</p>
+                    <p className="gb-num mt-1 text-sm text-accent">{money(p.price, biz.currency)}</p>
+                    <p className="gb-num text-xs text-muted-foreground">stock {p.stock}</p>
+                  </button>
+                );
+              })}
             </div>
           )}
         </Panel>
@@ -193,7 +205,7 @@ function Pos() {
                     <Minus className="size-3.5" />
                   </Button>
                   <span className="gb-num w-6 text-center text-sm">{l.qty}</span>
-                  <Button variant="outline" size="icon" className="size-7" onClick={() => add(l.product.id)}>
+                  <Button variant="outline" size="icon" className="size-7" onClick={() => add(l.product.id)} disabled={l.qty >= l.product.stock}>
                     <Plus className="size-3.5" />
                   </Button>
                 </li>

@@ -21,6 +21,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { GBossLogo } from "./logo";
 import { LangSwitcher } from "./lang-switcher";
+import { Calculator } from "./calculator";
 import { KycStatusBadge, VerifiedBadge } from "./kyc-badge";
 import { useBiz } from "./biz-context";
 import { useI18n } from "@/lib/gboss/i18n";
@@ -221,6 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </p>
           </div>
 
+          <Calculator triggerClassName="shrink-0" />
           <LangSwitcher />
           <UserMenu />
         </header>

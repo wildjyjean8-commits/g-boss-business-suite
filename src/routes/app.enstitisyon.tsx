@@ -4,6 +4,7 @@ import { BookOpen, CalendarCheck, GraduationCap, Loader2, Plus, Receipt, Trash2 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useBiz } from "@/components/gboss/biz-context";
+import { Calculator } from "@/components/gboss/calculator";
 import { KpiCard, PageHeader, Panel, ProgressBar, StatusPill } from "@/components/gboss/ui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -427,11 +428,17 @@ function School() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="pf-due">Montan total dwe</Label>
-                <Input id="pf-due" type="number" value={payForm.amount_due || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_due: Number(e.target.value) }))} />
+                <div className="flex gap-1.5">
+                  <Input id="pf-due" type="number" value={payForm.amount_due || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_due: Number(e.target.value) }))} />
+                  <Calculator onUseResult={(v) => setPayForm((f) => ({ ...f, amount_due: v }))} />
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="pf-paid">Montan peye</Label>
-                <Input id="pf-paid" type="number" value={payForm.amount_paid || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_paid: Number(e.target.value) }))} />
+                <div className="flex gap-1.5">
+                  <Input id="pf-paid" type="number" value={payForm.amount_paid || ""} onChange={(e) => setPayForm((f) => ({ ...f, amount_paid: Number(e.target.value) }))} />
+                  <Calculator onUseResult={(v) => setPayForm((f) => ({ ...f, amount_paid: v }))} />
+                </div>
               </div>
             </div>
           </div>
