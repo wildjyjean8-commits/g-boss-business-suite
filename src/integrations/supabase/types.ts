@@ -533,6 +533,111 @@ export type Database = {
         }
         Relationships: []
       }
+      subjects: {
+        Row: { id: string; business_id: string; name: string; created_at: string }
+        Insert: { id?: string; business_id: string; name: string; created_at?: string }
+        Update: { id?: string; business_id?: string; name?: string; created_at?: string }
+        Relationships: []
+      }
+      class_schedule: {
+        Row: {
+          id: string
+          business_id: string
+          classroom: string
+          subject: string
+          teacher_name: string | null
+          day_of_week: number
+          start_time: string
+          end_time: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          classroom: string
+          subject: string
+          teacher_name?: string | null
+          day_of_week: number
+          start_time: string
+          end_time: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          classroom?: string
+          subject?: string
+          teacher_name?: string | null
+          day_of_week?: number
+          start_time?: string
+          end_time?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      discipline_records: {
+        Row: {
+          id: string
+          business_id: string
+          student_id: string
+          occurred_on: string
+          category: string
+          description: string
+          action_taken: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          student_id: string
+          occurred_on?: string
+          category?: string
+          description: string
+          action_taken?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          student_id?: string
+          occurred_on?: string
+          category?: string
+          description?: string
+          action_taken?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      announcements: {
+        Row: {
+          id: string
+          business_id: string
+          title: string
+          body: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          title: string
+          body: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          title?: string
+          body?: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       calc_memos: {
         Row: {
           id: string
